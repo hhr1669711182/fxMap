@@ -29,7 +29,6 @@ import amapData from "../amap/data.json";
 import carImg from "../amap/imgs/car.png";
 import fireImg from "../amap/imgs/xfz.png";
 import { zhxfdzXYList } from "../amap/mapData.ts";
-import { getDistance } from "ol/sphere";
 
 const emit = defineEmits(["setMap"]);
 
@@ -92,7 +91,9 @@ const endCoord = ref<[number, number] | null>(null);
 const activeDropdown = ref<"start" | "end" | null>(null);
 const isPlanning = ref(false);
 
-const canStart = computed(() => !!endCoord.value && !isPlanning.value);
+const canStart = computed(
+  () => !!startCoord.value && !!endCoord.value && !isPlanning.value,
+);
 
 const formatTipText = (t: TipItem) => {
   const parts = [t.name, t.district, t.address].filter(Boolean);
@@ -169,80 +170,6 @@ const selectTip = (type: "start" | "end", tip: TipItem) => {
   activeDropdown.value = null;
 };
 
-const fetchDisasterSuggestions = async (
-  queryString: string,
-  cb: (list: Array<any>) => void,
-) => {
-  const q = (queryString || "").trim();
-  if (!q) {
-    cb([]);
-    return;
-  }
-  if (!nav) {
-    cb([]);
-    return;
-  }
-  const key = ensureAmapKey();
-  if (!key) {
-    cb([]);
-    return;
-  }
-  nav.setKey(key);
-  await loadBeijingMaskIfReady();
-
-  try {
-    const tips = (await fetchInputTips({
-      key,
-      keywords: q,
-      city: (regionCfg?.city as string) || "",
-      citylimit: true,
-    })) as TipItem[];
-
-    const items = tips
-      .filter(
-        (t) =>
-          t.location &&
-          Number.isFinite(t.location[0]) &&
-          Number.isFinite(t.location[1]),
-      )
-      .map((t) => ({
-        ...t,
-        value: formatTipText(t),
-      }));
-
-    cb(items);
-  } catch {
-    cb([]);
-  }
-};
-
-const onDisasterSelect = (item: any) => {
-  const loc = item?.location as [number, number] | undefined;
-  if (!loc) return;
-  endText.value = item?.value || formatTipText(item);
-  endCoord.value = loc;
-  if (map) {
-    map.getView().animate({
-      center: olProj.fromLonLat(loc),
-      duration: 300,
-    });
-  }
-};
-
-const getNearestFireStation = (target: [number, number]) => {
-  let best: any = null;
-  let bestDist = Infinity;
-  for (const s of zhxfdzXYList as any[]) {
-    if (!Number.isFinite(s?.lng) || !Number.isFinite(s?.lat)) continue;
-    const d = getDistance(target, [s.lng, s.lat]);
-    if (d < bestDist) {
-      bestDist = d;
-      best = s;
-    }
-  }
-  return best ? { station: best, distanceMeters: bestDist } : null;
-};
-
 const pickOnMap = async (type: "start" | "end") => {
   if (!nav) return;
   const key = ensureAmapKey();
@@ -264,7 +191,7 @@ const pickOnMap = async (type: "start" | "end") => {
 };
 
 const startSimulate = async () => {
-  if (!nav || !endCoord.value) return;
+  if (!nav || !startCoord.value || !endCoord.value) return;
   const key = ensureAmapKey();
   if (!key) return;
   nav.setKey(key);
@@ -272,18 +199,9 @@ const startSimulate = async () => {
 
   isPlanning.value = true;
   try {
-    const nearest = getNearestFireStation(endCoord.value);
-    if (!nearest) {
-      window.alert("未找到可用的消防站坐标");
-      return;
-    }
-    const start: [number, number] = [nearest.station.lng, nearest.station.lat];
-    startCoord.value = start;
-    startText.value = nearest.station.title;
-
-    nav.setEndpoint("start", start);
+    nav.setEndpoint("start", startCoord.value);
     nav.setEndpoint("end", endCoord.value);
-    await nav.planAndStart(start, endCoord.value);
+    await nav.planAndStart(startCoord.value, endCoord.value);
   } catch (e) {
     const msg = e instanceof Error ? e.message : "路径规划失败";
     window.alert(msg);
@@ -499,29 +417,162 @@ onUnmounted(() => {
       </div>
     </div>
 
+    <div ref="navPanelRef" class="nav_panel" v-show="navVisible">
+      <div class="nav_row">
+        <div class="nav_label">起点</div>
+        <div class="nav_field">
+          <input
+            class="nav_input"
+            v-model="startText"
+            placeholder="输入起点（支持模糊搜索）"
+            @focus="
+              () => {
+                activeDropdown = 'start';
+                queryStartTips();
+              }
+            "
+            @input="
+              () => {
+                activeDropdown = 'start';
+                queryStartTips();
+              }
+            "
+          />
+          <button class="nav_pick" type="button" @click="pickOnMap('start')">
+            选点
+          </button>
+          <div
+            v-if="activeDropdown === 'start' && startTips.length"
+            class="nav_dropdown"
+          >
+            <button
+              v-for="tip in startTips"
+              :key="tip.id || formatTipText(tip)"
+              type="button"
+              class="nav_option"
+              @click="selectTip('start', tip)"
+            >
+              {{ formatTipText(tip) }}
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="nav_row">
+        <div class="nav_label">终点</div>
+        <div class="nav_field">
+          <input
+            class="nav_input"
+            v-model="endText"
+            placeholder="输入终点（支持模糊搜索）"
+            @focus="
+              () => {
+                activeDropdown = 'end';
+                queryEndTips();
+              }
+            "
+            @input="
+              () => {
+                activeDropdown = 'end';
+                queryEndTips();
+              }
+            "
+          />
+          <button class="nav_pick" type="button" @click="pickOnMap('end')">
+            选点
+          </button>
+          <div
+            v-if="activeDropdown === 'end' && endTips.length"
+            class="nav_dropdown"
+          >
+            <button
+              v-for="tip in endTips"
+              :key="tip.id || formatTipText(tip)"
+              type="button"
+              class="nav_option"
+              @click="selectTip('end', tip)"
+            >
+              {{ formatTipText(tip) }}
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="nav_actions">
+        <button
+          class="nav_action"
+          type="button"
+          :disabled="!canStart"
+          @click="startSimulate"
+        >
+          {{ isPlanning ? "规划中..." : "开始" }}
+        </button>
+        <button
+          class="nav_action nav_action_secondary"
+          type="button"
+          @click="clearNav"
+        >
+          清除
+        </button>
+      </div>
+    </div>
+
     <div ref="navPanelRef" class="nav_panel_new">
       <div class="nav_row">
-        <el-button class="nav_pick" type="primary" @click="pickOnMap('end')">
+        <!-- <div class="nav_label">终点</div> -->
+        <button class="nav_pick" type="button" @click="pickOnMap('end')">
           选点
-        </el-button>
-
+        </button>
         <div class="nav_field">
-          <el-autocomplete
+          <input
+            class="nav_input"
             v-model="endText"
-            class="nav_input_ep"
-            placeholder="输入查询灾情位置"
-            :fetch-suggestions="fetchDisasterSuggestions"
-            :trigger-on-focus="false"
-            clearable
-            @select="onDisasterSelect"
+            placeholder="输入终点（支持模糊搜索）"
+            @focus="
+              () => {
+                activeDropdown = 'end';
+                queryEndTips();
+              }
+            "
+            @input="
+              () => {
+                activeDropdown = 'end';
+                queryEndTips();
+              }
+            "
           />
-        </div>
 
+          <div
+            v-if="activeDropdown === 'end' && endTips.length"
+            class="nav_dropdown"
+          >
+            <button
+              v-for="tip in endTips"
+              :key="tip.id || formatTipText(tip)"
+              type="button"
+              class="nav_option"
+              @click="selectTip('end', tip)"
+            >
+              {{ formatTipText(tip) }}
+            </button>
+          </div>
+        </div>
         <div class="nav_actions">
-          <el-button type="primary" :disabled="!canStart" @click="startSimulate">
+          <button
+            class="nav_action"
+            type="button"
+            :disabled="!canStart"
+            @click="startSimulate"
+          >
             {{ isPlanning ? "规划中..." : "开始" }}
-          </el-button>
-          <el-button :disabled="isPlanning" @click="clearNav">清除</el-button>
+          </button>
+          <button
+            class="nav_action nav_action_secondary"
+            type="button"
+            @click="clearNav"
+          >
+            清除
+          </button>
         </div>
       </div>
     </div>
@@ -533,10 +584,6 @@ onUnmounted(() => {
   height: 100%;
   width: 100%;
   touch-action: none; /* 优化触摸体验 */
-}
-
-:deep(.el-button+.el-button) {
-  margin-left: 0px;
 }
 
 .nav_panel {
@@ -633,7 +680,7 @@ onUnmounted(() => {
 .nav_row {
   width: 100%;
   display: grid;
-  grid-template-columns: 50px 1fr auto;
+  grid-template-columns: 50px auto 100px;
   gap: 10px;
   align-items: center;
 }
@@ -653,10 +700,6 @@ onUnmounted(() => {
   display: grid;
   /* grid-template-columns: 1fr 56px; */
   gap: 8px;
-}
-
-.nav_input_ep {
-  width: 100%;
 }
 
 .nav_input {
@@ -799,14 +842,13 @@ onUnmounted(() => {
 
 /* 缩放控件适配 */
 :global(.ol-zoom) {
-  top: calc(100% - 120px) !important;
+  top: 0.5em;
   left: 0.5em;
 }
 
 :global(.is-mobile .ol-zoom) {
   left: 0.5em;
-  /* top: 0.5em; */
-  top: calc(100% - 120px) !important;
+  top: 0.5em;
 }
 
 :global(.ol-zoom button) {

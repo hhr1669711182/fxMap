@@ -106,13 +106,13 @@ commonStore.$onAction(({ name, after }) => {
 
   <!-- 2.5D顺丰白模区域地图 -->
   <twoFiveDPanel
-    name="2.5D顺丰白模区域地图"
+    name="区域地图"
     src="http://192.168.172.115:5173/ThreejsViewerRegion"
   />
 
   <!-- 三维模型构件 -->
   <threeDPanel
-    name="3D模型构件"
+    name="模型构件"
     src="http://192.168.172.115:5173/ThreejsViewerBuilding"
   />
 </template>
