@@ -1,13 +1,24 @@
+/*
+ * @Author: huanghuanrong
+ * @Date: 2026-03-31 15:30:08
+ * @LastEditTime: 2026-04-02 16:21:40
+ * @LastEditors: huanghuanrong
+ * @Description: 文件描述
+ * @FilePath: \OpenlayersMap\src\baseComponent\OpenlayersMap\const.map.ts
+ */
 /** 视图范围 */
 export const EXTENT = [
   10062641.88063987, 1498445.467101972, 15385105.034193262, 5661511.775625812,
 ];
 
 /** 缩放 */
-export const ZOOM = { MAX: 18, MIN: 0, INIT: 5 };
+export const ZOOM = { MAX: 18, MIN: 0, INIT: 14 };
 
 // 中心点
-export const CENTER = [114.3005, 30.5928];
+// export const CENTER = [114.3005, 30.5928];
+// export const CENTER = [116.4074, 39.9042];
+export const CENTER = [113.5437, 22.2657];
+
 
 //水印文字
 export const WATER_TEXT = "Openlayers";

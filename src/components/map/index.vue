@@ -8,6 +8,9 @@ import clear from "./clear.vue";
 import brp from "./brp.vue";
 import topicLayerCard from "./component/topicLayerCard.vue";
 import dragPanel from "./dragPanel/index.vue";
+import twoFiveDPanel from "./component/2.5DPanel.vue";
+import threeDPanel from "./component/3DPanel.vue";
+
 import routePlan from "./component/routePlan.vue";
 import {
   useMapStore,
@@ -42,15 +45,15 @@ commonStore.$onAction(({ name, after }) => {
   if (name == "setThemeColor") {
     after(({ color }) => {
       const mapInstance = toRaw(map.value);
-      if(!mapInstance){
-          return
+      if (!mapInstance) {
+        return;
       }
       const baseLayer = mapInstance
         .getLayers()
         .getArray()
         .find(
           (i: { getClassName: () => string }) =>
-            i.getClassName() == LAYER_NAMES.AMAP_LAYER
+            i.getClassName() == LAYER_NAMES.AMAP_LAYER,
         );
 
       if (baseLayer) {
@@ -75,19 +78,19 @@ commonStore.$onAction(({ name, after }) => {
   <brp />
 
   <!-- 顶部panel -->
-  <dragPanel />
+  <!-- <dragPanel /> -->
 
   <!-- 右侧操作栏 -->
-  <trp />
+  <!-- <trp /> -->
 
   <!-- 路径规划 -->
   <routePlan v-if="type == PANEL_TYPES.ROUTE_PLAN" />
 
   <!-- 专题图 -->
-  <topicLayerCard />
+  <!-- <topicLayerCard /> -->
 
   <!-- 清除 -->
-  <clear />
+  <!-- <clear /> -->
 
   <!-- 卡片内容 -->
   <card />
@@ -96,9 +99,21 @@ commonStore.$onAction(({ name, after }) => {
   <bigPanel />
 
   <!--鼠标按键交互卡片-->
-  <keyboardNote />
+  <!-- <keyboardNote /> -->
 
   <!--github图标-->
-  <GithubIcon />
+  <!-- <GithubIcon /> -->
+
+  <!-- 2.5D顺丰白模区域地图 -->
+  <twoFiveDPanel
+    name="2.5D顺丰白模区域地图"
+    src="http://192.168.172.115:5173/ThreejsViewerRegion"
+  />
+
+  <!-- 三维模型构件 -->
+  <threeDPanel
+    name="3D模型构件"
+    src="http://192.168.172.115:5173/ThreejsViewerBuilding"
+  />
 </template>
 <style scoped></style>

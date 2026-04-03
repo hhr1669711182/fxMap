@@ -10,6 +10,6 @@ export default defineConfig({
   ],
   base: "./",
   server: {
-    port: 5158,
+    port: 8888,
   },
 });
