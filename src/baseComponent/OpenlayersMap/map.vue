@@ -271,6 +271,11 @@ const pickOnMap = async (type: "start" | "end") => {
   activeDropdown.value = null;
 };
 
+const onFatherMessage = (coord: [number, number]) => {
+  endCoord.value = coord;
+  startSimulate();
+};
+
 const startSimulate = async () => {
   if (!nav || !endCoord.value) return;
   const key = ensureAmapKey();
@@ -303,7 +308,7 @@ const startSimulate = async () => {
 const clearNav = () => {
   nav?.stop();
   nav?.clearEndpoints();
-  EventBus.emit('panelClose');
+  EventBus.emit("panelClose");
   startText.value = "";
   endText.value = "";
   startTips.value = [];
@@ -473,6 +478,12 @@ onMounted(() => {
     initMap();
   });
   document.addEventListener("click", handleDocumentClick, true);
+  window.addEventListener("message", function (event) {
+    if (event.origin !== location.origin) return;
+    console.log("收到消息：", event.data);
+    const coord = event.data as [number, number];
+    onFatherMessage(coord);
+  });
 });
 
 onUnmounted(() => {
