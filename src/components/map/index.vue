@@ -27,7 +27,7 @@ import {
 import { THEME_COLOR } from "../../const/const.common.ts";
 import { tileLoadFunction } from "../../util/mapTool.ts";
 import keyboardNote from "../../baseComponent/keyboardNote.vue";
-import GithubIcon from "../../baseComponent/GithubIcon.vue";
+// import GithubIcon from "../../baseComponent/GithubIcon.vue";
 
 const MapStore = useMapStore();
 const PanelStore = usePanelStore();

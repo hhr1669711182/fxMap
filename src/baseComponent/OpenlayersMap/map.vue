@@ -271,9 +271,12 @@ const pickOnMap = async (type: "start" | "end") => {
   activeDropdown.value = null;
 };
 
-const onFatherMessage = (coord: [number, number]) => {
+const onFatherMessage = async (coord: [number, number]) => {
   endCoord.value = coord;
   startSimulate();
+  // 逆地址解析，获取地址信息
+  const address = await nav?.reverseGeocode(coord);
+  endText.value = address || "";
 };
 
 const startSimulate = async () => {

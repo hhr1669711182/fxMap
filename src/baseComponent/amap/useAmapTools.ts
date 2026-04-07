@@ -681,6 +681,20 @@ export class AmapRealtimeNav {
     );
   }
 
+  async reverseGeocode(lngLat: LngLat) {
+    if (!this.options.amapKey) return null;
+    const { formattedAddress, poiName } = await fetchRegeo({
+      key: this.options.amapKey,
+      location: lngLat,
+    });
+
+    const address = poiName
+      ? `${poiName}（${formattedAddress}）`
+      : formattedAddress;
+
+    return address;
+  }
+
   cancelPick() {
     this.exitPickingMode();
     this.clearEndpoints();
