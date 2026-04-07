@@ -1,5 +1,5 @@
 <script setup lang="ts">
-const githubLink = "https://github.com/Jinuss/maps";
+const githubLink = "https://github.com/hhr1669711182/fxMap";
 </script>
 <template>
   <a :href="githubLink" class="iss-github-corner" title="求个star"><i></i></a>

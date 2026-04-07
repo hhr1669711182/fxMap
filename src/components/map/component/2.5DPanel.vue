@@ -1,7 +1,7 @@
 <!--
  * @Author: huanghuanrong
  * @Date: 2026-04-02 18:40:02
- * @LastEditTime: 2026-04-02 19:16:58
+ * @LastEditTime: 2026-04-07 17:59:08
  * @LastEditors: huanghuanrong
  * @Description: 文件描述
  * @FilePath: \OpenlayersMap\src\components\map\component\2.5DPanel.vue
@@ -95,12 +95,14 @@ onMounted(() => {
   window.addEventListener("message", onMessage);
   EventBus.on(NAV_FINISHED_EVENT as any, onNavFinished);
   EventBus.on(IFRAME_BROADCAST_EVENT as any, onBroadcast);
+  EventBus.on('panelClose', close);
 });
 
 onUnmounted(() => {
   window.removeEventListener("message", onMessage);
   EventBus.off(NAV_FINISHED_EVENT as any, onNavFinished);
   EventBus.off(IFRAME_BROADCAST_EVENT as any, onBroadcast);
+  EventBus.off('panelClose', close);
 });
 
 watch(visible, (v) => {
@@ -112,12 +114,12 @@ watch(visible, (v) => {
 
 <template>
   <div
-    v-show="visible"
+    v-if="visible"
     class="iframe_panel"
     :style="{
-      top: `${top ?? 82}px`,
+      top: `${top ?? 72}px`,
       width: `${width ?? 420}px`,
-      height: `${height ?? 320}px`,
+      height: `${height ?? 360}px`,
     }"
   >
     <div class="iframe_panel_header">

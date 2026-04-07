@@ -44,7 +44,7 @@ const getMap = (map: Object) => {
 commonStore.$onAction(({ name, after }) => {
   if (name == "setThemeColor") {
     after(({ color }) => {
-      const mapInstance = toRaw(map.value);
+      const mapInstance: any = toRaw(map.value);  
       if (!mapInstance) {
         return;
       }

@@ -30,6 +30,8 @@ import carImg from "../amap/imgs/car.png";
 import fireImg from "../amap/imgs/xfz.png";
 import { zhxfdzXYList } from "../amap/mapData.ts";
 import { getDistance } from "ol/sphere";
+import { ElMessage } from "element-plus";
+import { EventBus } from "../../util/mitt.ts";
 
 const emit = defineEmits(["setMap"]);
 
@@ -218,7 +220,11 @@ const fetchDisasterSuggestions = async (
 
 const onDisasterSelect = (item: any) => {
   const loc = item?.location as [number, number] | undefined;
-  if (!loc) return;
+  if (!loc) {
+    // if (!nav) return;
+    // nav.endMarker = null;
+    return;
+  }
   endText.value = item?.value || formatTipText(item);
   endCoord.value = loc;
   if (map) {
@@ -226,6 +232,8 @@ const onDisasterSelect = (item: any) => {
       center: olProj.fromLonLat(loc),
       duration: 300,
     });
+    // 标注点
+    nav?.setEndpoint("end", loc);
   }
 };
 
@@ -274,7 +282,7 @@ const startSimulate = async () => {
   try {
     const nearest = getNearestFireStation(endCoord.value);
     if (!nearest) {
-      window.alert("未找到可用的消防站坐标");
+      ElMessage.warning("未找到可用的消防站坐标");
       return;
     }
     const start: [number, number] = [nearest.station.lng, nearest.station.lat];
@@ -282,11 +290,11 @@ const startSimulate = async () => {
     startText.value = nearest.station.title;
 
     nav.setEndpoint("start", start);
-    nav.setEndpoint("end", endCoord.value);
+    nav.setEndpoint("alarm", endCoord.value);
     await nav.planAndStart(start, endCoord.value);
   } catch (e) {
     const msg = e instanceof Error ? e.message : "路径规划失败";
-    window.alert(msg);
+    ElMessage.error(msg);
   } finally {
     isPlanning.value = false;
   }
@@ -295,6 +303,7 @@ const startSimulate = async () => {
 const clearNav = () => {
   nav?.stop();
   nav?.clearEndpoints();
+  EventBus.emit('panelClose');
   startText.value = "";
   endText.value = "";
   startTips.value = [];
@@ -377,7 +386,7 @@ const initMap = () => {
     printControl.setSize("A4");
     // map.addControl(printControl);
 
-    printControl.on(["print", "error"], (e) => {
+    printControl.on(["print", "error"], (e: any) => {
       if (e.image) {
         const uuid = uuidv4().replace(/-/g, "");
         if (e.pdf) {
@@ -397,7 +406,7 @@ const initMap = () => {
           pdf.save(e.print.legend ? "legend.pdf" : `openlayers_${uuid}.pdf`);
         } else {
           e.canvas.toBlob(
-            (blob) => {
+            (blob: any) => {
               const name =
                 (e.print.legend ? "legend." : `map_${uuid}.`) +
                 e.imageType.replace("image/", "");
@@ -518,7 +527,11 @@ onUnmounted(() => {
         </div>
 
         <div class="nav_actions">
-          <el-button type="primary" :disabled="!canStart" @click="startSimulate">
+          <el-button
+            type="primary"
+            :disabled="!canStart"
+            @click="startSimulate"
+          >
             {{ isPlanning ? "规划中..." : "开始" }}
           </el-button>
           <el-button :disabled="isPlanning" @click="clearNav">清除</el-button>
@@ -535,7 +548,7 @@ onUnmounted(() => {
   touch-action: none; /* 优化触摸体验 */
 }
 
-:deep(.el-button+.el-button) {
+:deep(.el-button + .el-button) {
   margin-left: 0px;
 }
 

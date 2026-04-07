@@ -38,7 +38,10 @@ export const createVehicleStyle = ({
   });
 };
 
-export const createEndpointStyle = (type: "start" | "end") => {
+export const createEndpointStyle = (type: "start" | "end" | "alarm") => {
+  if (type === "alarm") {
+    return createFireStationStyle(new URL("./imgs/alarm.png", import.meta.url).toString());
+  };
   const color = type === "start" ? "#22C55E" : "#EF4444";
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 28 28"><circle cx="14" cy="14" r="10" fill="${color}"/><circle cx="14" cy="14" r="6" fill="white"/></svg>`;
   return new Style({
@@ -83,7 +86,7 @@ export type StyleKey =
 type StyleParamsMap = {
   tmcLine: { status: AmapTmcStatus; width?: number };
   vehicle: { src: string; rotation: number; scale?: number };
-  endpoint: { type: "start" | "end" };
+  endpoint: { type: "start" | "end" | "alarm" };
   mask: undefined;
   boundary: undefined;
   fireStation: { iconSrc: string; scale?: number };

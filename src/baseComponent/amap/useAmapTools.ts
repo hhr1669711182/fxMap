@@ -531,7 +531,7 @@ const computeSpeedMps = (totalMeters: number, opt: AmapRealtimeNavOptions) => {
 
   let speed = opt.speedMps;
   if (!speed || !Number.isFinite(speed) || speed <= 0) {
-    const nominalSpeed = 12;
+    const nominalSpeed = 52;
     const duration = clampNumber(
       totalMeters / nominalSpeed,
       minDuration,
@@ -558,11 +558,13 @@ export class AmapRealtimeNav {
   private animationStartTs = 0;
   private currentDistance = 0;
   private lastVehicleRotation: number | null = null;
+  private navFinishedEmitted = false;
   private routeLayer: VectorLayer<VectorSource> | null = null;
   private maskLayer: VectorLayer<VectorSource> | null = null;
   private pointLayer: VectorLayer<VectorSource> | null = null;
   private startMarker: Feature<Point> | null = null;
-  private endMarker: Feature<Point> | null = null;
+  public endMarker: Feature<Point> | null = null;
+  private alarmMarker: Feature<Point> | null = null;
   private originLngLat: LngLat | null = null;
   private destinationLngLat: LngLat | null = null;
 
@@ -572,8 +574,8 @@ export class AmapRealtimeNav {
       xzKeywords: "珠海市",
       refreshMs: 15000,
       speedMps: undefined,
-      minSpeedMps: 4,
-      maxSpeedMps: 35,
+      minSpeedMps: 10,
+      maxSpeedMps: 100,
       minDurationSec: 20,
       maxDurationSec: 180,
       vehicleHeadingOffsetRad: Math.PI / 2,
@@ -696,6 +698,7 @@ export class AmapRealtimeNav {
     this.animationStartTs = 0;
     this.currentDistance = 0;
     this.lastVehicleRotation = null;
+    this.navFinishedEmitted = false;
     this.routeProjectedCoords = [];
     this.routeDistances = [];
     this.originLngLat = null;
@@ -759,7 +762,7 @@ export class AmapRealtimeNav {
     this.clearPoints();
   }
 
-  setEndpoint(type: "start" | "end", lngLat: LngLat) {
+  setEndpoint(type: "start" | "end" | "alarm", lngLat: LngLat) {
     this.ensureLayers();
     const coordinate = olProj.fromLonLat(lngLat);
     const f = new Feature({ geometry: new Point(coordinate) });
@@ -768,9 +771,12 @@ export class AmapRealtimeNav {
     if (type === "start") {
       if (this.startMarker) src.removeFeature(this.startMarker);
       this.startMarker = f;
-    } else {
+    } else if (type === "end") {
       if (this.endMarker) src.removeFeature(this.endMarker);
       this.endMarker = f;
+    } else if (type === "alarm") {
+      if (this.alarmMarker) src.removeFeature(this.alarmMarker);
+      this.alarmMarker = f;
     }
     src.addFeature(f);
   }
@@ -817,6 +823,7 @@ export class AmapRealtimeNav {
     this.routeProjectedCoords = fullProjected;
     this.routeDistances = buildProjectedDistanceIndex(fullProjected);
     this.lastVehicleRotation = null;
+    this.navFinishedEmitted = false;
 
     if (fullProjected.length >= 2) {
       const extent = new LineString(fullProjected).getExtent();
@@ -853,6 +860,7 @@ export class AmapRealtimeNav {
       this.currentDistance = 0;
       this.animationStartTs = now;
       this.lastVehicleRotation = null;
+      this.navFinishedEmitted = false;
     }
 
     const loop = this.options.loop ?? false;
@@ -881,7 +889,8 @@ export class AmapRealtimeNav {
           })
         );
       }
-      if (!loop && targetDist >= total) {
+      if (!loop && targetDist >= (total - 60 * 18) && !this.navFinishedEmitted) {
+        this.navFinishedEmitted = true;
         if (this.timerId) {
           window.clearInterval(this.timerId);
           this.timerId = null;
@@ -893,7 +902,7 @@ export class AmapRealtimeNav {
           finishedAt: Date.now(),
         } as NavFinishedPayload);
         this.rafId = null;
-        return;
+        // return;
       }
       this.rafId = window.requestAnimationFrame(tick);
     };

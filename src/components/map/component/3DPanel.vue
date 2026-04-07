@@ -1,7 +1,7 @@
 <!--
  * @Author: huanghuanrong
  * @Date: 2026-04-02 18:39:34
- * @LastEditTime: 2026-04-02 19:14:01
+ * @LastEditTime: 2026-04-07 18:02:21
  * @LastEditors: huanghuanrong
  * @Description: 文件描述
  * @FilePath: \OpenlayersMap\src\components\map\component\3DPanel.vue
@@ -43,7 +43,7 @@ const toCloneable = (input: any) => {
             seen.add(v);
           }
           return v;
-        })
+        }),
       );
     } catch {
       return null;
@@ -57,7 +57,7 @@ const postToIframe = (type: string, payload: any) => {
   const safePayload = toCloneable(payload);
   win.postMessage(
     { source: "OpenlayersMap", channel: "panel", type, payload: safePayload },
-    "*"
+    "*",
   );
 };
 
@@ -95,29 +95,29 @@ onMounted(() => {
   window.addEventListener("message", onMessage);
   EventBus.on(NAV_FINISHED_EVENT as any, onNavFinished);
   EventBus.on(IFRAME_BROADCAST_EVENT as any, onBroadcast);
+  EventBus.on('panelClose', close);
 });
 
 onUnmounted(() => {
   window.removeEventListener("message", onMessage);
   EventBus.off(NAV_FINISHED_EVENT as any, onNavFinished);
   EventBus.off(IFRAME_BROADCAST_EVENT as any, onBroadcast);
+  EventBus.off('panelClose', close);
 });
 
-watch(visible, (v) => {
-  if (v) {
-    postToIframe("open", { name: props.name || "3D" });
-  }
+watch(visible, (v: boolean) => {
+  v && postToIframe("open", { name: props.name || "3D" });
 });
 </script>
 
 <template>
   <div
-    v-show="visible"
+    v-if="visible"
     class="iframe_panel"
     :style="{
-      top: `${top ?? 422}px`,
+      top: `${top ?? 442}px`,
       width: `${width ?? 420}px`,
-      height: `${height ?? 360}px`,
+      height: `${height ?? 380}px`,
     }"
   >
     <div class="iframe_panel_header">
