@@ -1,5 +1,14 @@
+/*
+ * @Author: huanghuanrong
+ * @Date: 2026-03-31 15:30:08
+ * @LastEditTime: 2026-04-09 18:05:43
+ * @LastEditors: huanghuanrong
+ * @Description: 文件描述
+ * @FilePath: \OpenlayersMap\src\main.ts
+ */
 import { createApp } from "vue";
-import { createPinia } from "pinia";
+import type { App as VueApp } from "vue";
+import { createPinia, setActivePinia } from "pinia";
 import ElementPlus from "element-plus";
 import * as ElementPlusIconsVue from "@element-plus/icons-vue";
 import {
@@ -14,48 +23,44 @@ import "./styles/night.css";
 import { drag } from "./directives/index.ts";
 import App from "./App.vue";
 
-const pinia = createPinia();
+let app: VueApp | null = null;
 
-const app = createApp(App);
+const createInstance = () => {
+  const pinia = createPinia();
+  setActivePinia(pinia);
 
-app.use(pinia);
+  const app = createApp(App);
+  app.use(pinia);
+  app.use(ElementPlus);
 
-app.use(ElementPlus);
+  Object.entries(ElementPlusIconsVue).forEach(([key, component]) => {
+    app.component(key, component);
+  });
 
-for (const [key, component] of Object.entries(ElementPlusIconsVue)) {
-  app.component(key, component);
-}
+  app.directive("drag", drag);
+  return app;
+};
 
-app.directive("drag", drag);
-
-// app.mount("#app");
-
-let root:any = null;
-
-function render(props: QiankunProps) {
-  const { container } = props;
-  const node = container
-    ? container.querySelector("#app")
+const mount = (props: QiankunProps = {} as any) => {
+  const node = props.container
+    ? props.container.querySelector("#app")
     : document.getElementById("app");
-  console.log("🚀 ~ render ~ node:", node);
-  root=app.mount(node)
-  return root;
-}
+  app = createInstance();
+  app.mount(node!);
+};
+
+const unmount = () => {
+  app?.unmount();
+  app = null;
+};
 
 renderWithQiankun({
-  mount(props: any) {
-    root = render(props);
-  },
+  mount,
   bootstrap() {},
-  unmount(props: any) {
-    console.log(props);
-    root?.unmount();
-  },
-  update(props: any) {
-    console.log(props);
-  },
+  unmount,
+  update() {},
 });
 
 if (!qiankunWindow.__POWERED_BY_QIANKUN__) {
-  root = render({});
+  mount({} as any);
 }

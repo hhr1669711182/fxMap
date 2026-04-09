@@ -16,7 +16,8 @@ import {
   useMapStore,
   usePanelStore,
   useCommonStore,
-} from "../../store/index.ts";
+  useTabsStore,
+} from "@/store/index.ts";
 import { PANEL_TYPES } from "../../const/const.panel.ts";
 import bigPanel from "./component/bigPanel.vue";
 import OpenlayersMap from "../../baseComponent/OpenlayersMap/map.vue";
@@ -28,10 +29,13 @@ import { THEME_COLOR } from "../../const/const.common.ts";
 import { tileLoadFunction } from "../../util/mapTool.ts";
 import keyboardNote from "../../baseComponent/keyboardNote.vue";
 // import GithubIcon from "../../baseComponent/GithubIcon.vue";
+// @ts-ignore
+import { publicLink } from "../../../public/publicLink.js";
 
 const MapStore = useMapStore();
 const PanelStore = usePanelStore();
 const commonStore = useCommonStore();
+const tabsStore = useTabsStore();
 
 const { type } = storeToRefs(PanelStore);
 
@@ -44,7 +48,7 @@ const getMap = (map: Object) => {
 commonStore.$onAction(({ name, after }) => {
   if (name == "setThemeColor") {
     after(({ color }) => {
-      const mapInstance: any = toRaw(map.value);  
+      const mapInstance: any = toRaw(map.value);
       if (!mapInstance) {
         return;
       }
@@ -72,10 +76,10 @@ commonStore.$onAction(({ name, after }) => {
   <OpenlayersMap @setMap="getMap" />
 
   <!-- 指南针 -->
-  <tlp />
+  <tlp v-if="tabsStore.activeTab === 1" />
 
   <!-- 鼠标hover经纬度 -->
-  <brp />
+  <brp v-if="tabsStore.activeTab === 1"/>
 
   <!-- 顶部panel -->
   <!-- <dragPanel /> -->
@@ -105,15 +109,9 @@ commonStore.$onAction(({ name, after }) => {
   <!-- <GithubIcon /> -->
 
   <!-- 2.5D顺丰白模区域地图 -->
-  <twoFiveDPanel
-    name="区域地图"
-    src="http://192.168.172.115:5173/ThreejsViewerRegion"
-  />
+  <twoFiveDPanel name="区域地图" :src="publicLink.d25" />
 
   <!-- 三维模型构件 -->
-  <threeDPanel
-    name="模型构件"
-    src="http://192.168.172.115:5173/ThreejsViewerBuilding"
-  />
+  <threeDPanel name="模型构件" :src="publicLink.d3" />
 </template>
 <style scoped></style>

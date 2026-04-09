@@ -32,6 +32,15 @@ import { zhxfdzXYList } from "../amap/mapData.ts";
 import { getDistance } from "ol/sphere";
 import { ElMessage } from "element-plus";
 import { EventBus } from "../../util/mitt.ts";
+import { useTabsStore } from "@/store";
+
+import ljImg from "@/assets/svg/lj.svg";
+import xcImg from "@/assets/svg/xc.svg";
+import zjImg from "@/assets/svg/jz.svg";
+
+// @ts-ignore
+import { publicLink } from "../../../public/publicLink.js";
+import { storeToRefs } from "pinia";
 
 const emit = defineEmits(["setMap"]);
 
@@ -272,11 +281,16 @@ const pickOnMap = async (type: "start" | "end") => {
 };
 
 const onFatherMessage = async (coord: [number, number]) => {
+  // tabs切换地图模式
+  tabsStore.setActiveTab(1);
+
   endCoord.value = coord;
   startSimulate();
   // 逆地址解析，获取地址信息
   const address = await nav?.reverseGeocode(coord);
   endText.value = address || "";
+  // 关闭模型
+  EventBus.emit("panelClose");
 };
 
 const startSimulate = async () => {
@@ -382,7 +396,7 @@ const initMap = () => {
     // map.addControl(new ZoomSlider());
   }
 
-  map.addControl(new FullScreen());
+  // map.addControl(new FullScreen());
   map.addControl(new ScaleLine());
   // map.addControl(new ZoomToExtent({ extent: EXTENT }));
 
@@ -476,16 +490,37 @@ const cleanup = () => {
   }
 };
 
+// tabs 模型
+const tabsStore = useTabsStore();
+const { activeTab } = storeToRefs(tabsStore);
+const tabs = ref([
+  {
+    label: "路径规划",
+    name: 1,
+    icon: ljImg,
+  },
+  {
+    label: "现场态势",
+    name: 2,
+    icon: xcImg,
+  },
+  {
+    label: "建筑剖面",
+    name: 3,
+    icon: zjImg,
+  },
+]);
+
 onMounted(() => {
   nextTick(() => {
     initMap();
   });
   document.addEventListener("click", handleDocumentClick, true);
   window.addEventListener("message", function (event) {
-    if (event.origin !== location.origin) return;
-    console.log("收到消息：", event.data);
-    const coord = event.data as [number, number];
-    onFatherMessage(coord);
+    console.log("收到消息：", event, event.data);
+    // if (event.origin !== location.origin) return;
+    const coord = event.data.payload as [number, number];
+    coord?.length >= 2 && onFatherMessage(coord);
   });
 });
 
@@ -496,7 +531,13 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div id="map" :class="{ 'is-mobile': isMobile }" tabindex="2">
+  <div
+    v-show="activeTab === 1"
+    id="map"
+    :class="{ 'is-mobile': isMobile }"
+    tabindex="2"
+  >
+    <!-- 队站弹窗 -->
     <div ref="firePopupRef" class="fire_popup" v-show="firePopupVisible">
       <div class="fire_popup_header">
         <div class="fire_popup_title">{{ fireSelected?.title }}</div>
@@ -522,6 +563,7 @@ onUnmounted(() => {
       </div>
     </div>
 
+    <!-- 调派路径规划 -->
     <div ref="navPanelRef" class="nav_panel_new">
       <div class="nav_row">
         <el-button class="nav_pick" type="primary" @click="pickOnMap('end')">
@@ -553,9 +595,93 @@ onUnmounted(() => {
       </div>
     </div>
   </div>
+
+  <!-- tab panel 模型 -->
+  <div class="bottom_nav_tab">
+    <div
+      v-for="tab in tabs"
+      :key="tab.name"
+      class="tab_item"
+      :class="{ tab_item_active: tab.name == activeTab }"
+      @click="tabsStore.setActiveTab(tab.name)"
+    >
+      <img :src="tab.icon" alt="" />
+      {{ tab.label }}
+    </div>
+  </div>
+
+  <div v-show="activeTab === 2">
+    <iframe
+      ref="iframeRef"
+      :src="publicLink.d25 || 'about:blank'"
+      class="iframe_panel_iframe"
+    />
+  </div>
+  <div v-show="activeTab === 3">
+    <iframe
+      ref="iframeRef"
+      :src="publicLink.d3 || 'about:blank'"
+      class="iframe_panel_iframe"
+    />
+  </div>
 </template>
 
 <style scoped>
+.iframe_panel_iframe {
+  width: 100%;
+  height: 100vh;
+  border: 0;
+}
+
+.bottom_nav_tab {
+  position: absolute;
+  bottom: 0.5em;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 60;
+  width: 100%;
+  height: 40px;
+  background: url("@/assets/bottomBg.png") center no-repeat;
+  background-size: 100% 100%;
+
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+}
+.tab_item {
+  /* width: 56px; */
+  /* height: 20px; */
+  font-family:
+    PingFangSC,
+    PingFang SC;
+  font-weight: 500;
+  font-size: 14px;
+  color: #ffffff;
+  line-height: 20px;
+  text-align: left;
+  font-style: normal;
+  opacity: 0.5;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+
+  pointer-events: pointer;
+  cursor: pointer;
+}
+
+.tab_item_active {
+  opacity: 1;
+}
+
+.tab_item img {
+  width: 20px;
+  height: 20px;
+}
+
 #map {
   height: 100%;
   width: 100%;

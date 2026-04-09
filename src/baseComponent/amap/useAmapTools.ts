@@ -7,7 +7,8 @@ import { unByKey } from "ol/Observable";
 import type { EventsKey } from "ol/events";
 import * as olProj from "ol/proj";
 import Overlay from "ol/Overlay";
-import { EventBus } from "../../util/mitt.ts";
+// import { EventBus } from "../../util/mitt.ts";
+import { useTabsStore } from "@/store";
 import {
   getStyle
 } from "./featureStyle";
@@ -231,6 +232,7 @@ const jsonpRequest = <T = any>(url: string, timeoutMs = 15000): Promise<T> => {
     };
 
     (window as any)[callbackName] = (data: T) => {
+      // console.log("🚀 ~ jsonpRequest ~ data:", data)
       cleanup();
       resolve(data);
     };
@@ -515,6 +517,7 @@ export type AmapRealtimeNavOptions = {
   maxSpeedMps?: number;
   minDurationSec?: number;
   maxDurationSec?: number;
+  nominalSpeed?: number;
   vehicleHeadingOffsetRad?: number;
   loop?: boolean;
   vehicleIconSrc: string;
@@ -528,10 +531,11 @@ const computeSpeedMps = (totalMeters: number, opt: AmapRealtimeNavOptions) => {
   const maxSpeed = opt.maxSpeedMps ?? 35;
   const minDuration = opt.minDurationSec ?? 20;
   const maxDuration = opt.maxDurationSec ?? 180;
+  const nominalSpeed = opt.nominalSpeed ?? 1000;
 
   let speed = opt.speedMps;
   if (!speed || !Number.isFinite(speed) || speed <= 0) {
-    const nominalSpeed = 52;
+    // const nominalSpeed = 1000;
     const duration = clampNumber(
       totalMeters / nominalSpeed,
       minDuration,
@@ -575,9 +579,10 @@ export class AmapRealtimeNav {
       refreshMs: 15000,
       speedMps: undefined,
       minSpeedMps: 10,
-      maxSpeedMps: 100,
+      maxSpeedMps: 10000,
       minDurationSec: 20,
-      maxDurationSec: 180,
+      maxDurationSec: 1800,
+      nominalSpeed: 1000,
       vehicleHeadingOffsetRad: Math.PI / 2,
       loop: false,
       ...options,
@@ -903,18 +908,22 @@ export class AmapRealtimeNav {
           })
         );
       }
-      if (!loop && targetDist >= (total - 60 * 18) && !this.navFinishedEmitted) {
+      if (!loop && targetDist >= (total - 60 * 1) && !this.navFinishedEmitted) {
         this.navFinishedEmitted = true;
         if (this.timerId) {
           window.clearInterval(this.timerId);
           this.timerId = null;
         }
-        EventBus.emit(NAV_FINISHED_EVENT, {
-          origin: this.originLngLat ?? undefined,
-          destination: this.destinationLngLat ?? undefined,
-          endPoint: this.pickEnd ?? undefined,
-          finishedAt: Date.now(),
-        } as NavFinishedPayload);
+        // EventBus.emit(NAV_FINISHED_EVENT, {
+        //   origin: this.originLngLat ?? undefined,
+        //   destination: this.destinationLngLat ?? undefined,
+        //   endPoint: this.pickEnd ?? undefined,
+        //   finishedAt: Date.now(),
+        // } as NavFinishedPayload);
+
+        // tabs切换地图模式
+        useTabsStore().setActiveTab(2);
+
         this.rafId = null;
         // return;
       }

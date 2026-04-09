@@ -6,3 +6,11 @@ declare global {
 }
 
 export {};
+
+declare module "../../../public/publicLink.js" {
+  export const publicLink: {
+    d25: string;
+    d3: string;
+  };
+}
+

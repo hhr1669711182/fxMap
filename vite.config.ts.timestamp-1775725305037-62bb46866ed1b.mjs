@@ -1,0 +1,26 @@
+// vite.config.ts
+import { defineConfig } from "file:///C:/Users/16697/Desktop/github/BIM+gis/github/OpenlayersMap/node_modules/vite/dist/node/index.js";
+import vue from "file:///C:/Users/16697/Desktop/github/BIM+gis/github/OpenlayersMap/node_modules/@vitejs/plugin-vue/dist/index.mjs";
+import qiankun from "file:///C:/Users/16697/Desktop/github/BIM+gis/github/OpenlayersMap/node_modules/vite-plugin-qiankun/dist/index.js";
+import { resolve } from "path";
+var __vite_injected_original_dirname = "C:\\Users\\16697\\Desktop\\github\\BIM+gis\\github\\OpenlayersMap";
+var vite_config_default = defineConfig({
+  plugins: [
+    vue(),
+    qiankun("vue-openlayers-app", { useDevMode: true })
+  ],
+  base: "./",
+  resolve: {
+    alias: {
+      "@": resolve(__vite_injected_original_dirname, "src")
+    }
+  },
+  server: {
+    port: 8888,
+    host: "0.0.0.0"
+  }
+});
+export {
+  vite_config_default as default
+};
+//# sourceMappingURL=data:application/json;base64,ewogICJ2ZXJzaW9uIjogMywKICAic291cmNlcyI6IFsidml0ZS5jb25maWcudHMiXSwKICAic291cmNlc0NvbnRlbnQiOiBbImNvbnN0IF9fdml0ZV9pbmplY3RlZF9vcmlnaW5hbF9kaXJuYW1lID0gXCJDOlxcXFxVc2Vyc1xcXFwxNjY5N1xcXFxEZXNrdG9wXFxcXGdpdGh1YlxcXFxCSU0rZ2lzXFxcXGdpdGh1YlxcXFxPcGVubGF5ZXJzTWFwXCI7Y29uc3QgX192aXRlX2luamVjdGVkX29yaWdpbmFsX2ZpbGVuYW1lID0gXCJDOlxcXFxVc2Vyc1xcXFwxNjY5N1xcXFxEZXNrdG9wXFxcXGdpdGh1YlxcXFxCSU0rZ2lzXFxcXGdpdGh1YlxcXFxPcGVubGF5ZXJzTWFwXFxcXHZpdGUuY29uZmlnLnRzXCI7Y29uc3QgX192aXRlX2luamVjdGVkX29yaWdpbmFsX2ltcG9ydF9tZXRhX3VybCA9IFwiZmlsZTovLy9DOi9Vc2Vycy8xNjY5Ny9EZXNrdG9wL2dpdGh1Yi9CSU0rZ2lzL2dpdGh1Yi9PcGVubGF5ZXJzTWFwL3ZpdGUuY29uZmlnLnRzXCI7LypcclxuICogQEF1dGhvcjogaHVhbmdodWFucm9uZ1xyXG4gKiBARGF0ZTogMjAyNi0wMy0zMSAxNTozMDowOFxyXG4gKiBATGFzdEVkaXRUaW1lOiAyMDI2LTA0LTA5IDE2OjMyOjU2XHJcbiAqIEBMYXN0RWRpdG9yczogaHVhbmdodWFucm9uZ1xyXG4gKiBARGVzY3JpcHRpb246IFx1NjU4N1x1NEVGNlx1NjNDRlx1OEZGMFxyXG4gKiBARmlsZVBhdGg6IFxcT3BlbmxheWVyc01hcFxcdml0ZS5jb25maWcudHNcclxuICovXHJcbmltcG9ydCB7IGRlZmluZUNvbmZpZyB9IGZyb20gXCJ2aXRlXCI7XHJcbmltcG9ydCB2dWUgZnJvbSBcIkB2aXRlanMvcGx1Z2luLXZ1ZVwiO1xyXG5pbXBvcnQgcWlhbmt1biBmcm9tIFwidml0ZS1wbHVnaW4tcWlhbmt1blwiO1xyXG5pbXBvcnQgeyByZXNvbHZlIH0gZnJvbSBcInBhdGhcIjtcclxuXHJcbi8vIGh0dHBzOi8vdml0ZWpzLmRldi9jb25maWcvXHJcbmV4cG9ydCBkZWZhdWx0IGRlZmluZUNvbmZpZyh7XHJcbiAgcGx1Z2luczogW1xyXG4gICAgdnVlKCksXHJcbiAgICBxaWFua3VuKFwidnVlLW9wZW5sYXllcnMtYXBwXCIsIHsgdXNlRGV2TW9kZTogdHJ1ZSB9KSxcclxuICBdLFxyXG4gIGJhc2U6IFwiLi9cIixcclxuICByZXNvbHZlOiB7XHJcbiAgICBhbGlhczoge1xyXG4gICAgICBcIkBcIjogcmVzb2x2ZShfX2Rpcm5hbWUsIFwic3JjXCIpLFxyXG4gICAgfSxcclxuICB9LFxyXG4gIHNlcnZlcjoge1xyXG4gICAgcG9ydDogODg4OCxcclxuICAgIGhvc3Q6IFwiMC4wLjAuMFwiLCAgXHJcbiAgfSxcclxufSk7XHJcbiJdLAogICJtYXBwaW5ncyI6ICI7QUFRQSxTQUFTLG9CQUFvQjtBQUM3QixPQUFPLFNBQVM7QUFDaEIsT0FBTyxhQUFhO0FBQ3BCLFNBQVMsZUFBZTtBQVh4QixJQUFNLG1DQUFtQztBQWN6QyxJQUFPLHNCQUFRLGFBQWE7QUFBQSxFQUMxQixTQUFTO0FBQUEsSUFDUCxJQUFJO0FBQUEsSUFDSixRQUFRLHNCQUFzQixFQUFFLFlBQVksS0FBSyxDQUFDO0FBQUEsRUFDcEQ7QUFBQSxFQUNBLE1BQU07QUFBQSxFQUNOLFNBQVM7QUFBQSxJQUNQLE9BQU87QUFBQSxNQUNMLEtBQUssUUFBUSxrQ0FBVyxLQUFLO0FBQUEsSUFDL0I7QUFBQSxFQUNGO0FBQUEsRUFDQSxRQUFRO0FBQUEsSUFDTixNQUFNO0FBQUEsSUFDTixNQUFNO0FBQUEsRUFDUjtBQUNGLENBQUM7IiwKICAibmFtZXMiOiBbXQp9Cg==
