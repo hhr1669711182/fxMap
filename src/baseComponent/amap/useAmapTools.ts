@@ -908,7 +908,7 @@ export class AmapRealtimeNav {
           })
         );
       }
-      if (!loop && targetDist >= (total - 60 * 1) && !this.navFinishedEmitted) {
+      if (!loop && targetDist >= (total - 60 * 3) && !this.navFinishedEmitted) {
         this.navFinishedEmitted = true;
         if (this.timerId) {
           window.clearInterval(this.timerId);
