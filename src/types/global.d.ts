@@ -3,6 +3,10 @@ declare global {
     Live2D: any;
     loadlive2d: any;
   }
+
+  var module: any;
+  var exports: any;
+  function require(path: string): any;
 }
 
 export {};

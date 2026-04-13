@@ -1,7 +1,7 @@
 /*
  * @Author: huanghuanrong
  * @Date: 2026-03-31 15:30:08
- * @LastEditTime: 2026-04-09 18:05:43
+ * @LastEditTime: 2026-04-13 18:55:36
  * @LastEditors: huanghuanrong
  * @Description: 文件描述
  * @FilePath: \OpenlayersMap\src\main.ts
@@ -17,25 +17,30 @@ import {
   QiankunProps,
 } from "vite-plugin-qiankun/dist/helper";
 import "element-plus/dist/index.css";
+import "virtual:svg-icons-register";
+import 'virtual:uno.css'
 import "./style.css";
 import "./styles/day.css";
 import "./styles/night.css";
 import { drag } from "./directives/index.ts";
 import App from "./App.vue";
+import router from '@/router'
 
 let app: VueApp | null = null;
 
 const createInstance = () => {
+  const app = createApp(App);
+
   const pinia = createPinia();
   setActivePinia(pinia);
 
-  const app = createApp(App);
   app.use(pinia);
-  app.use(ElementPlus);
+  // app.use(ElementPlus);
+  app.use(router);
 
-  Object.entries(ElementPlusIconsVue).forEach(([key, component]) => {
-    app.component(key, component);
-  });
+  // Object.entries(ElementPlusIconsVue).forEach(([key, component]) => {
+  //   app.component(key, component);
+  // });
 
   app.directive("drag", drag);
   return app;

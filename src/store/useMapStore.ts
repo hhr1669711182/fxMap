@@ -1,3 +1,11 @@
+/*
+ * @Author: huanghuanrong
+ * @Date: 2026-03-31 15:30:08
+ * @LastEditTime: 2026-04-13 18:34:23
+ * @LastEditors: huanghuanrong
+ * @Description: 文件描述
+ * @FilePath: \OpenlayersMap\src\store\useMapStore.ts
+ */
 import { defineStore } from "pinia";
 import { Map } from "ol";
 

@@ -7,6 +7,7 @@ import { unByKey } from "ol/Observable";
 import type { EventsKey } from "ol/events";
 import * as olProj from "ol/proj";
 import Overlay from "ol/Overlay";
+import alarmIcon from "./imgs/alarm.png";
 // import { EventBus } from "../../util/mitt.ts";
 import { useTabsStore } from "@/store";
 import {
@@ -28,6 +29,33 @@ export type FireStationPoint = {
   title: string;
   address?: string;
   phone?: string;
+};
+
+export type AlarmData = {
+  id?: string;
+  province?: string;
+  city?: string;
+  county?: string;
+  town?: string;
+  community?: string;
+  adcode?: number;
+  road?: string;
+  road_no?: string;
+  type?: string;
+  aoi?: string;
+  sub_aoi?: string | null;
+  building?: string;
+  address?: string;
+  aoi_id?: string;
+  building_id?: string;
+  x?: number;
+  y?: number;
+  bg_id?: string | null;
+  md5_id?: string;
+  md5_parent_id?: string;
+  areausage_id?: number;
+  areausag_name?: string;
+  areausage_tag?: boolean;
 };
 
 export const createFireStationsLayer = (
@@ -569,6 +597,7 @@ export class AmapRealtimeNav {
   private startMarker: Feature<Point> | null = null;
   public endMarker: Feature<Point> | null = null;
   private alarmMarker: Feature<Point> | null = null;
+  private alarmData: AlarmData | null = null;
   private originLngLat: LngLat | null = null;
   private destinationLngLat: LngLat | null = null;
 
@@ -778,14 +807,26 @@ export class AmapRealtimeNav {
   clearEndpoints() {
     this.startMarker = null;
     this.endMarker = null;
+    this.alarmMarker = null;
+    this.alarmData = null;
     this.clearPoints();
   }
 
-  setEndpoint(type: "start" | "end" | "alarm", lngLat: LngLat) {
+  setEndpoint(
+    type: "start" | "end" | "alarm",
+    lngLat: LngLat,
+    options?: { alarmData?: AlarmData }
+  ) {
     this.ensureLayers();
     const coordinate = olProj.fromLonLat(lngLat);
     const f = new Feature({ geometry: new Point(coordinate) });
-    f.setStyle(getStyle("endpoint", { type }));
+    if (type === "alarm") {
+      f.setStyle(getStyle("alarm", { iconSrc: alarmIcon, scale: 0.9 }));
+      this.alarmData = options?.alarmData ?? null;
+      f.set("alarmData", this.alarmData);
+    } else {
+      f.setStyle(getStyle("endpoint", { type }));
+    }
     const src = this.pointLayer!.getSource()!;
     if (type === "start") {
       if (this.startMarker) src.removeFeature(this.startMarker);
@@ -798,6 +839,61 @@ export class AmapRealtimeNav {
       this.alarmMarker = f;
     }
     src.addFeature(f);
+  }
+
+  mountAlarmOverlay(params: {
+    element: HTMLElement;
+    onUpdate: (data: AlarmData | null) => void;
+  }) {
+    const overlay = new Overlay({
+      element: params.element,
+      positioning: "bottom-center",
+      offset: [0, -14],
+      stopEvent: true,
+    });
+    this.map.addOverlay(overlay);
+
+    const clickKey: EventsKey = this.map.on("singleclick", (evt) => {
+      let hit = false;
+      this.map.forEachFeatureAtPixel(
+        evt.pixel,
+        (feature, layer) => {
+          if (layer !== this.pointLayer) return false;
+          if (feature !== this.alarmMarker) return false;
+          const data = (feature as any).get("alarmData") as AlarmData | null;
+          params.onUpdate(data || null);
+          overlay.setPosition(evt.coordinate);
+          hit = true;
+          return true;
+        },
+        { hitTolerance: 6 }
+      );
+
+      if (!hit) {
+        params.onUpdate(null);
+        overlay.setPosition(undefined);
+      }
+    });
+
+    const showAtAlarm = () => {
+      if (!this.alarmMarker) return;
+      const geom = this.alarmMarker.getGeometry();
+      const coord = (geom as Point).getCoordinates();
+      params.onUpdate(this.alarmData);
+      overlay.setPosition(coord);
+    };
+
+    const hide = () => {
+      params.onUpdate(null);
+      overlay.setPosition(undefined);
+    };
+
+    const destroy = () => {
+      unByKey(clickKey);
+      this.map.removeOverlay(overlay);
+    };
+
+    return { overlay, showAtAlarm, hide, destroy };
   }
 
   async planAndStart(origin: LngLat, destination: LngLat) {

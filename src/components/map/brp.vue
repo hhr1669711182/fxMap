@@ -41,7 +41,7 @@ onMounted(() => {
   display: block;
   position: absolute;
   background: #ffffffb3;
-  bottom: 8px;
+  bottom: 28px;
   right: 8px;
   color: #000000bf;
   padding: 2px 6px;

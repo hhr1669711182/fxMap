@@ -1,0 +1,44 @@
+'Log files:
+C:\Users\16697\Desktop\github\BIM+gis\github\OpenlayersMap\.npm-cache\_logs\2026-04-10T07_52_36_109Z-debug-0.log
+
+# npm resolution error report
+
+While resolving: vite-plugin-static-copy@2.2.0
+Found: vite@8.0.8
+node_modules/vite
+  dev vite@"^8.0.8" from the root project
+  peer vite@"^2.9.0 || ^3.0.0-0 || ^4.0.0 || ^5.0.0-0 || ^6.0.0-0 || ^7.0.0-0 || ^8.0.0-0" from @unocss/vite@66.6.8
+  node_modules/@unocss/vite
+    @unocss/vite@"66.6.8" from unocss@66.6.8
+    node_modules/unocss
+      dev unocss@"^66.6.8" from the root project
+  peer vite@"^5.0.0 || ^6.0.0 || ^7.0.0 || ^8.0.0" from @vitejs/plugin-vue-jsx@5.1.5
+  node_modules/@vitejs/plugin-vue-jsx
+    dev @vitejs/plugin-vue-jsx@"^5.1.5" from the root project
+  peer vite@">=2" from vite-plugin-qiankun@1.0.15
+  node_modules/vite-plugin-qiankun
+    vite-plugin-qiankun@"^1.0.15" from the root project
+  peer vite@">=2.0.0" from vite-plugin-svg-icons@2.0.1
+  node_modules/vite-plugin-svg-icons
+    dev vite-plugin-svg-icons@"^2.0.1" from the root project
+  peer vite@"^5.0.0 || ^6.0.0 || ^7.0.0 || ^8.0.0" from @vitejs/plugin-vue@6.0.5
+  node_modules/@vitejs/plugin-vue
+    dev @vitejs/plugin-vue@"^6.0.0" from the root project
+  peer vite@"^6.0.0 || ^7.0.0 || ^8.0.0" from vite-plugin-vue-devtools@8.1.1
+  node_modules/vite-plugin-vue-devtools
+    dev vite-plugin-vue-devtools@"^8.1.1" from the root project
+
+Could not resolve dependency:
+peer vite@"^5.0.0 || ^6.0.0" from vite-plugin-static-copy@2.2.0
+node_modules/vite-plugin-static-copy
+  dev vite-plugin-static-copy@"^2.2.0" from the root project
+
+Conflicting peer dependency: vite@6.4.2
+node_modules/vite
+  peer vite@"^5.0.0 || ^6.0.0" from vite-plugin-static-copy@2.2.0
+  node_modules/vite-plugin-static-copy
+    dev vite-plugin-static-copy@"^2.2.0" from the root project
+
+Fix the upstream dependency conflict, or retry
+this command with --force or --legacy-peer-deps
+to accept an incorrect (and potentially broken) dependency resolution.

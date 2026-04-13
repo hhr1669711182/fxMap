@@ -33,6 +33,8 @@ import { getDistance } from "ol/sphere";
 import { ElMessage } from "element-plus";
 import { EventBus } from "../../util/mitt.ts";
 import { useTabsStore } from "@/store";
+import OverlayTemplate from "./overlayTemplate.vue";
+import type { AlarmData } from "../amap/useAmapTools.ts";
 
 import ljImg from "@/assets/svg/lj.svg";
 import xcImg from "@/assets/svg/xc.svg";
@@ -57,6 +59,13 @@ const firePopupVisible = ref(false);
 const navVisible = ref(false);
 const fireSelected = ref<any | null>(null);
 let fireManager: { hide: () => void; destroy: () => void } | null = null;
+
+const alarmPopupRef = ref<HTMLElement | null>(null);
+const alarmPopupVisible = ref(false);
+const alarmData = ref<AlarmData | null>(null);
+let alarmOverlayManager:
+  | { showAtAlarm: () => void; hide: () => void; destroy: () => void }
+  | null = null;
 
 // 解析动态配置（支持数组与对象），优先 data 字段
 const configList = Array.isArray(amapData)
@@ -182,20 +191,20 @@ const selectTip = (type: "start" | "end", tip: TipItem) => {
 
 const fetchDisasterSuggestions = async (
   queryString: string,
-  cb: (list: Array<any>) => void,
-) => {
+  cb: any,
+): Promise<any>  => {
   const q = (queryString || "").trim();
   if (!q) {
-    cb([]);
+    cb([] as any);
     return;
   }
   if (!nav) {
-    cb([]);
+    cb([] as any);
     return;
   }
   const key = ensureAmapKey();
   if (!key) {
-    cb([]);
+    cb([] as any);
     return;
   }
   nav.setKey(key);
@@ -221,9 +230,9 @@ const fetchDisasterSuggestions = async (
         value: formatTipText(t),
       }));
 
-    cb(items);
+    cb(items as any);
   } catch {
-    cb([]);
+    cb([] as any);
   }
 };
 
@@ -280,15 +289,17 @@ const pickOnMap = async (type: "start" | "end") => {
   activeDropdown.value = null;
 };
 
-const onFatherMessage = async (coord: [number, number]) => {
+const onFatherMessage = async (coord: [number, number], otherData: any) => {
   // tabs切换地图模式
   tabsStore.setActiveTab(1);
 
   endCoord.value = coord;
+  alarmData.value = (otherData || null) as AlarmData | null;
   startSimulate();
   // 逆地址解析，获取地址信息
   const address = await nav?.reverseGeocode(coord);
   endText.value = address || "";
+
   // 关闭模型
   EventBus.emit("panelClose");
 };
@@ -312,7 +323,9 @@ const startSimulate = async () => {
     startText.value = nearest.station.title;
 
     nav.setEndpoint("start", start);
-    nav.setEndpoint("alarm", endCoord.value);
+    nav.setEndpoint("alarm", endCoord.value, { alarmData: alarmData.value || undefined });
+    // alarmPopupVisible.value = true;
+    alarmOverlayManager?.showAtAlarm();
     await nav.planAndStart(start, endCoord.value);
   } catch (e) {
     const msg = e instanceof Error ? e.message : "路径规划失败";
@@ -325,6 +338,7 @@ const startSimulate = async () => {
 const clearNav = () => {
   nav?.stop();
   nav?.clearEndpoints();
+  closeAlarmPopup();
   EventBus.emit("panelClose");
   startText.value = "";
   endText.value = "";
@@ -347,6 +361,12 @@ const closeFirePopup = () => {
   firePopupVisible.value = false;
   fireSelected.value = null;
   if (fireManager) fireManager.hide();
+};
+
+const closeAlarmPopup = () => {
+  alarmPopupVisible.value = false;
+  alarmData.value = null;
+  alarmOverlayManager?.hide();
 };
 
 /**
@@ -471,6 +491,16 @@ const initMap = () => {
     });
   }
 
+  if (alarmPopupRef.value && nav) {
+    alarmOverlayManager = nav.mountAlarmOverlay({
+      element: alarmPopupRef.value,
+      onUpdate: (data) => {
+        alarmData.value = data;
+        alarmPopupVisible.value = !!data;
+      },
+    });
+  }
+
   emit("setMap", map);
 };
 
@@ -478,6 +508,8 @@ const initMap = () => {
  * 清理资源
  */
 const cleanup = () => {
+  alarmOverlayManager?.destroy();
+  alarmOverlayManager = null;
   fireManager?.destroy();
   fireManager = null;
   if (nav) {
@@ -519,8 +551,10 @@ onMounted(() => {
   window.addEventListener("message", function (event) {
     console.log("收到消息：", event, event.data);
     // if (event.origin !== location.origin) return;
-    const coord = event.data.payload as [number, number];
-    coord?.length >= 2 && onFatherMessage(coord);
+    const { payload, otherData } = event.data; 
+    // const coord = event.data.payload as [number, number];
+    payload?.length >= 2 && onFatherMessage(payload, otherData);
+
   });
 });
 
@@ -528,6 +562,20 @@ onUnmounted(() => {
   cleanup();
   document.removeEventListener("click", handleDocumentClick, true);
 });
+
+// const ThreejsViewerRegion = defineAsyncComponent(
+//   () => import("@/components/BIM/ThreejsViewerRegion.vue"),
+// );
+// const ThreejsViewerBuilding = defineAsyncComponent(
+//   () => import("@/components/BIM/ThreejsViewerBuilding.vue"),
+// );
+
+// const activeThreeView = computed(() => {
+//   if (activeTab.value === 2) return ThreejsViewerRegion;
+//   if (activeTab.value === 3) return ThreejsViewerBuilding;
+//   return null;
+// });
+
 </script>
 
 <template>
@@ -561,6 +609,38 @@ onUnmounted(() => {
           </span>
         </div>
       </div>
+    </div>
+
+    <!-- 警情弹窗（模板） -->
+    <div ref="alarmPopupRef">
+      <OverlayTemplate
+        :visible="alarmPopupVisible"
+        :title="alarmData?.aoi || alarmData?.address || '警情详情'"
+        @close="closeAlarmPopup"
+      >
+        <div v-if="alarmData?.address" class="fire_popup_row">
+          <span class="fire_popup_k">地址</span>
+          <span class="fire_popup_v">{{ alarmData.address }}</span>
+        </div>
+        <!-- <div class="fire_popup_row">
+          <span class="fire_popup_k">类型</span>
+          <span class="fire_popup_v">{{ alarmData?.type || '-' }}</span>
+        </div> -->
+        <div class="fire_popup_row">
+          <span class="fire_popup_k">区域</span>
+          <span class="fire_popup_v">
+            {{ alarmData?.province }}{{ alarmData?.city }}{{ alarmData?.county }}{{ alarmData?.town }}{{ alarmData?.community }}
+          </span>
+        </div>
+        <div class="fire_popup_row">
+          <span class="fire_popup_k">坐标</span>
+          <span class="fire_popup_v">{{ alarmData?.x }}, {{ alarmData?.y }}</span>
+        </div>
+        <div v-if="alarmData?.areausag_name" class="fire_popup_row">
+          <span class="fire_popup_k">用途</span>
+          <span class="fire_popup_v">{{ alarmData.areausag_name }}</span>
+        </div>
+      </OverlayTemplate>
     </div>
 
     <!-- 调派路径规划 -->
@@ -610,19 +690,21 @@ onUnmounted(() => {
     </div>
   </div>
 
-  <div v-show="activeTab === 2">
-    <iframe
+  <div v-if="activeTab === 2">
+    <ThreejsViewerRegion />
+    <!-- <iframe
       ref="iframeRef"
       :src="publicLink.d25 || 'about:blank'"
       class="iframe_panel_iframe"
-    />
+    /> -->
   </div>
-  <div v-show="activeTab === 3">
-    <iframe
+  <div v-if="activeTab === 3">
+    <ThreejsViewerBuilding />
+    <!-- <iframe
       ref="iframeRef"
       :src="publicLink.d3 || 'about:blank'"
       class="iframe_panel_iframe"
-    />
+    /> -->
   </div>
 </template>
 
@@ -950,9 +1032,13 @@ onUnmounted(() => {
   top: 4em;
 }
 
+:global(.ol-scale-line) {
+ bottom: 28px !important;
+}
+
 /* 缩放控件适配 */
 :global(.ol-zoom) {
-  top: calc(100% - 120px) !important;
+  top: calc(100% - 140px) !important;
   left: 0.5em;
 }
 

@@ -79,6 +79,7 @@ export type StyleKey =
   | "tmcLine"
   | "vehicle"
   | "endpoint"
+  | "alarm"
   | "mask"
   | "boundary"
   | "fireStation";
@@ -86,7 +87,8 @@ export type StyleKey =
 type StyleParamsMap = {
   tmcLine: { status: AmapTmcStatus; width?: number };
   vehicle: { src: string; rotation: number; scale?: number };
-  endpoint: { type: "start" | "end" | "alarm" };
+  endpoint: { type: "start" | "end" };
+  alarm: { iconSrc: string; scale?: number };
   mask: undefined;
   boundary: undefined;
   fireStation: { iconSrc: string; scale?: number };
@@ -97,6 +99,7 @@ const cache = new Map<string, Style>();
 const keyOf = (key: StyleKey, params: any) => {
   if (key === "tmcLine") return `tmcLine:${params.status}:${params.width ?? 6}`;
   if (key === "endpoint") return `endpoint:${params.type}`;
+  if (key === "alarm") return `alarm:${params.iconSrc}:${params.scale ?? 0.9}`;
   if (key === "mask") return "mask";
   if (key === "boundary") return "boundary";
   if (key === "fireStation") return `fireStation:${params.iconSrc}:${params.scale ?? 0.8}`;
@@ -140,6 +143,17 @@ export const getStyle = <K extends StyleKey>(
     case "boundary":
       st = createBoundaryStyle();
       break;
+    case "alarm": {
+      const p = params as StyleParamsMap["alarm"];
+      st = new Style({
+        image: new Icon({
+          src: p.iconSrc,
+          anchor: [0.5, 1],
+          scale: p.scale ?? 0.9,
+        }),
+      });
+      break;
+    }
     case "fireStation": {
       const p = params as StyleParamsMap["fireStation"];
       st = createFireStationStyle(p.iconSrc, p.scale ?? 0.8);

@@ -1,3 +1,11 @@
+<!--
+ * @Author: huanghuanrong
+ * @Date: 2026-03-31 15:30:08
+ * @LastEditTime: 2026-04-10 15:18:30
+ * @LastEditors: huanghuanrong
+ * @Description: 文件描述
+ * @FilePath: \OpenlayersMap\src\baseComponent\keyboardNote.vue
+-->
 <script setup lang="ts"></script>
 <template>
   <div class="keyboardNote">
@@ -17,7 +25,7 @@
 .keyboardNote {
   position: absolute;
   right: 100px;
-  bottom: 40px;
+  bottom: 60px;
   border-radius: 6px;
   padding: 6px 5px;
   background-color: rgba(94, 210, 225, 0.72);

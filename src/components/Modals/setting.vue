@@ -1,3 +1,11 @@
+<!--
+ * @Author: huanghuanrong
+ * @Date: 2026-03-31 15:30:08
+ * @LastEditTime: 2026-04-10 17:53:36
+ * @LastEditors: huanghuanrong
+ * @Description: 文件描述
+ * @FilePath: \OpenlayersMap\src\components\Modals\setting.vue
+-->
 <script setup lang="ts">
 import { ref, toRaw } from "vue";
 import { storeToRefs } from "pinia";
@@ -15,8 +23,8 @@ const modalStore = useModalStore();
 const scaleValue = ref(SCALEPLATE_LIST[0].t);
 
 const selectScaleUnit = (unit: string) => {
-  const v = SCALEPLATE_LIST.filter(({ t }) => unit == t)[0].v;
-  const mapInstance: Map = toRaw(map.value);
+  const v: any = SCALEPLATE_LIST.filter(({ t }) => unit == t)[0].v;
+  const mapInstance = toRaw(map.value) as Map;
 
   const scaleControl: ScaleLine | undefined = mapInstance
     .getControls()

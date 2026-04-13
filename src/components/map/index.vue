@@ -8,8 +8,8 @@ import clear from "./clear.vue";
 import brp from "./brp.vue";
 import topicLayerCard from "./component/topicLayerCard.vue";
 import dragPanel from "./dragPanel/index.vue";
-import twoFiveDPanel from "./component/2.5DPanel.vue";
-import threeDPanel from "./component/3DPanel.vue";
+import twoFiveDPanel from "./component/d25Panel.vue";
+import threeDPanel from "./component/d3Panel.vue";
 
 import routePlan from "./component/routePlan.vue";
 import {
@@ -85,7 +85,7 @@ commonStore.$onAction(({ name, after }) => {
   <!-- <dragPanel /> -->
 
   <!-- 右侧操作栏 -->
-  <!-- <trp /> -->
+  <trp />
 
   <!-- 路径规划 -->
   <routePlan v-if="type == PANEL_TYPES.ROUTE_PLAN" />

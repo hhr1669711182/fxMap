@@ -1,3 +1,11 @@
+<!--
+ * @Author: huanghuanrong
+ * @Date: 2026-03-31 15:30:08
+ * @LastEditTime: 2026-04-13 19:05:39
+ * @LastEditors: huanghuanrong
+ * @Description: 文件描述
+ * @FilePath: \OpenlayersMap\src\App.vue
+-->
 <script setup lang="ts">
 import { onBeforeMount } from "vue";
 import home from "./view/home.vue";
@@ -20,8 +28,9 @@ onBeforeMount(() => {
 </script>
 
 <template>
-  <home />
+  <!-- <home /> -->
   <index-modal />
+  <router-view />
 </template>
 
 <style scoped></style>
