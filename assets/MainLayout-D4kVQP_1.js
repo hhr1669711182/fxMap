@@ -1,0 +1,1 @@
+import{B as e,I as t,m as n,t as r,y as i}from"./_plugin-vue_export-helper-CXW7CW_m.js";var a={},o={class:`common-layout h-full bg-gray-50/50`};function s(r,a){let s=e(`router-view`);return t(),n(`div`,o,[i(s)])}var c=r(a,[[`render`,s]]);export{c as default};
