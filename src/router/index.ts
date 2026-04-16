@@ -1,7 +1,7 @@
 /*
  * @Author: huanghuanrong
  * @Date: 2026-04-13 18:52:23
- * @LastEditTime: 2026-04-15 14:16:23
+ * @LastEditTime: 2026-04-16 11:31:07
  * @LastEditors: huanghuanrong
  * @Description: 文件描述
  * @FilePath: \OpenlayersMap\src\router\index.ts
@@ -22,12 +22,12 @@ const routes = [
       {
         path: '/map',
         name: 'map',
-        component: import('@/views/home.vue')
+        component: () => import('@/views/home.vue')
       },
       {
         path: '/test',
         name: 'test',
-        component: import('@/views/test/index.vue')
+        component: () => import('@/views/test/index.vue')
       },
       // {
       //   path: '/ThreejsViewerRegion',
