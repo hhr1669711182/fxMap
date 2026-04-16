@@ -43,7 +43,7 @@ export default defineConfig(({ mode, command }) => {
         resolvers: [ElementPlusResolver()],
       }),
       createSvgIconsPlugin({
-        iconDirs: [resolve(fileURLToPath(new URL("./src/assets/svg", import.meta.url)), "svg")],
+        iconDirs: [fileURLToPath(new URL("./src/assets/svg", import.meta.url))],
         symbolId: "icon-[dir]-[name]",
       }),
       // qiankun("vue-openlayers-app", { useDevMode: true }),
@@ -62,7 +62,7 @@ export default defineConfig(({ mode, command }) => {
             entry: resolve(__dirname, "src/lib/index.ts"),
             name: "OpenlayersMapLib",
             fileName: (format) => `openlayers-map.${format}.js`,
-            formats: ["es", "umd"],
+            formats: ["es"],
           }
         : undefined,
       rolldownOptions: {
@@ -70,13 +70,7 @@ export default defineConfig(({ mode, command }) => {
         output: {
           sourcemap: mode !== "production",
           codeSplitting: !isLib,
-          globals: isLib
-            ? {
-                vue: "Vue",
-                pinia: "Pinia",
-                "vue-router": "VueRouter",
-              }
-            : {},
+          globals: {},
         },
       },
     },

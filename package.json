@@ -2,15 +2,16 @@
   "name": "dispatch-model-map",
   "version": "1.0.0",
   "type": "module",
-  "main": "./dist-lib/openlayers-map.umd.js",
+  "main": "./dist-lib/openlayers-map.es.js",
   "module": "./dist-lib/openlayers-map.es.js",
   "types": "./dist-lib/index.d.ts",
+  "style": "./dist-lib/dispatch-model-map.css",
   "exports": {
     ".": {
       "types": "./dist-lib/index.d.ts",
-      "import": "./dist-lib/openlayers-map.es.js",
-      "require": "./dist-lib/openlayers-map.umd.js"
-    }
+      "import": "./dist-lib/openlayers-map.es.js"
+    },
+    "./style.css": "./dist-lib/dispatch-model-map.css"
   },
   "files": [
     "dist-lib"
