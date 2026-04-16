@@ -2,7 +2,7 @@
 import { onMounted, nextTick, toRaw, ref } from "vue";
 import { storeToRefs } from "pinia";
 import { transform } from "ol/proj";
-import { useMapStore } from "../../store";
+import { useMapStore } from "@/store";
 import { Coordinate } from "ol/coordinate";
 
 const mapStore = useMapStore();

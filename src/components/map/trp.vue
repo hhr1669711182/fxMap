@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { toRaw, ref, computed } from "vue";
 import { storeToRefs } from "pinia";
-import { useMapStore, useCardStore, useTopicLayerStore, usePanelStore } from "../../store";
-import { TYPES, PANEL_TYPES, DRAW_TYPES } from "../../const";
-import { useResponsive } from "../../composables/useResponsive.ts";
+import { useMapStore, useCardStore, useTopicLayerStore, usePanelStore } from "@/store";
+import { TYPES, PANEL_TYPES, DRAW_TYPES } from "@/const";
+import { useResponsive } from "@/composables/useResponsive.ts";
 
 const { isMobile } = useResponsive();
 const { map } = storeToRefs(useMapStore());

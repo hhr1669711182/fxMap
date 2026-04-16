@@ -1,16 +1,16 @@
 /*
  * @Author: huanghuanrong
  * @Date: 2026-04-13 18:52:23
- * @LastEditTime: 2026-04-13 19:51:37
+ * @LastEditTime: 2026-04-15 14:16:23
  * @LastEditors: huanghuanrong
  * @Description: 文件描述
  * @FilePath: \OpenlayersMap\src\router\index.ts
  */
-import { createRouter, createWebHashHistory } from 'vue-router'
+import { createRouter, createWebHashHistory, createMemoryHistory } from 'vue-router'
 
 // 引入你的页面
-import ThreejsViewerRegion from '@/view/region.vue'   // 火灾/建筑页面
-import ThreejsViewerBuilding from '@/view/building.vue'     // 你新增的页面
+import ThreejsViewerRegion from '@/views/region.vue'   // 火灾/建筑页面
+import ThreejsViewerBuilding from '@/views/building.vue'     // 你新增的页面
 import { App } from 'vue'
 
 const routes = [
@@ -22,7 +22,12 @@ const routes = [
       {
         path: '/map',
         name: 'map',
-        component: import('@/view/home.vue')
+        component: import('@/views/home.vue')
+      },
+      {
+        path: '/test',
+        name: 'test',
+        component: import('@/views/test/index.vue')
       },
       // {
       //   path: '/ThreejsViewerRegion',
