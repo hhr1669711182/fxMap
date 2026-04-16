@@ -1,27 +1,18 @@
-<!DOCTYPE html><html lang="en"><head>
-  <link rel="stylesheet" href="cesium/Widgets/widgets.css">
-  <script src="cesium/Cesium.js"></script>
+<!doctype html>
+<html lang="en">
 
-  <meta charset="UTF-8">
-  <link rel="icon" href="./fav.jpg">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<head>
+  <meta charset="UTF-8" />
+  <link rel="icon" href="./fav.jpg" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>xfMap</title>
-  <script crossorigin="">import('./assets/index-B7T6-zVU.js').finally(() => {
-            
-    const qiankunLifeCycle = window.moudleQiankunAppLifeCycles && window.moudleQiankunAppLifeCycles['vue-openlayers-app'];
-    if (qiankunLifeCycle) {
-      window.proxy.vitemount((props) => qiankunLifeCycle.mount(props));
-      window.proxy.viteunmount((props) => qiankunLifeCycle.unmount(props));
-      window.proxy.vitebootstrap(() => qiankunLifeCycle.bootstrap());
-      window.proxy.viteupdate((props) => qiankunLifeCycle.update(props));
-    }
-  
-          })</script>
-  <link rel="modulepreload" crossorigin="" href="./assets/_plugin-vue_export-helper-CXW7CW_m.js">
-  <link rel="modulepreload" crossorigin="" href="./assets/chunk-B3K2TuZy.js">
-  <link rel="modulepreload" crossorigin="" href="./assets/vue-router-DiKZIBD0.js">
-  <link rel="stylesheet" crossorigin="" href="./assets/vue-router-nIYmUaVy.css">
-  <link rel="stylesheet" crossorigin="" href="./assets/index-BwiE0RzA.css">
+  <script type="module" crossorigin src="./assets/index-CovD48F2.js"></script>
+  <link rel="modulepreload" crossorigin href="./assets/_plugin-vue_export-helper-CXW7CW_m.js">
+  <link rel="modulepreload" crossorigin href="./assets/chunk-B3K2TuZy.js">
+  <link rel="modulepreload" crossorigin href="./assets/mitt-BNKROHT7.js">
+  <link rel="modulepreload" crossorigin href="./assets/vue-router-Ctacr4Bp.js">
+  <link rel="stylesheet" crossorigin href="./assets/vue-router-nIYmUaVy.css">
+  <link rel="stylesheet" crossorigin href="./assets/index-BwiE0RzA.css">
 </head>
 
 <body>
@@ -30,27 +21,6 @@
   </svg>
   <div id="app"></div>
   
+</body>
 
-
-<script>
-  const createDeffer = (hookName) => {
-    const d = new Promise((resolve, reject) => {
-      window.proxy && (window.proxy[`vite${hookName}`] = resolve)
-    })
-    return props => d.then(fn => fn(props));
-  }
-  const bootstrap = createDeffer('bootstrap');
-  const mount = createDeffer('mount');
-  const unmount = createDeffer('unmount');
-  const update = createDeffer('update');
-
-  ;(global => {
-    global.qiankunName = 'vue-openlayers-app';
-    global['vue-openlayers-app'] = {
-      bootstrap,
-      mount,
-      unmount,
-      update
-    };
-  })(window);
-</script></body></html>
+</html>

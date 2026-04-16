@@ -1,0 +1,1 @@
+import{I as e,N as t,b as n,m as r,t as i}from"./_plugin-vue_export-helper-CXW7CW_m.js";import{t as a}from"./mitt-BNKROHT7.js";var o={id:`map-dd`,class:`map-container`},s=i(n({__name:`index`,setup(n){return a(),t(()=>{}),(t,n)=>(e(),r(`div`,o))}}),[[`__scopeId`,`data-v-754ac678`]]);export{s as default};
