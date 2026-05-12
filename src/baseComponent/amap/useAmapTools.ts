@@ -9,7 +9,7 @@ import * as olProj from "ol/proj";
 import Overlay from "ol/Overlay";
 import alarmIcon from "./imgs/alarm.png";
 // import { EventBus } from "../../util/mitt.ts";
-import { useTabsStore } from "@/store";
+import { useTabsStore, useDispatchStore } from "@/store";
 import {
   getStyle
 } from "./featureStyle";
@@ -584,6 +584,12 @@ export class AmapRealtimeNav {
   private pickEnd: LngLat | null = null;
   private timerId: number | null = null;
   private rafId: number | null = null;
+  private vehicleFeatures: Feature<Point>[] = [];
+  private routeProjectedCoordsMulti: number[][][] = [];
+  private routeDistancesMulti: number[][] = [];
+  private currentDistances: number[] = [];
+  private lastVehicleRotations: (number | null)[] = [];
+
   private vehicleFeature: Feature<Point> | null = null;
   private routeProjectedCoords: number[][] = [];
   private routeDistances: number[] = [];
@@ -896,6 +902,172 @@ export class AmapRealtimeNav {
     return { overlay, showAtAlarm, hide, destroy };
   }
 
+  async planAndStartMulti(origins: LngLat[], destination: LngLat) {
+    this.stop();
+    if (!this.options.amapKey || origins.length === 0) return;
+    this.pickStart = origins[0];
+    this.pickEnd = destination;
+    this.originLngLat = origins[0];
+    this.destinationLngLat = destination;
+
+    const updateRoute = async (preserveDistance: boolean) => {
+      const results = await Promise.all(origins.map(origin => fetchDrivingRoute({
+        key: this.options.amapKey!,
+        origin,
+        destination,
+        extensions: "all",
+      })));
+      
+      // 路径数据和（临时）警情位置
+      useDispatchStore().setDispatch({
+        navPathPlanData: {
+          [destination.join(",").toString()]: results,
+        },
+        alarmData: {
+          gisX: destination[0],
+          gisY: destination[1],
+        }
+      });
+
+      this.renderRouteMulti(results, preserveDistance);
+    };
+
+    await updateRoute(false);
+
+    if (this.options.refreshMs && this.options.refreshMs > 0) {
+      this.timerId = window.setInterval(() => {
+        void updateRoute(true);
+      }, this.options.refreshMs);
+    }
+  }
+
+  private renderRouteMulti(results: AmapDrivingResult[], preserveDistance: boolean) {
+    const source = this.routeLayer!.getSource()!;
+    source.clear();
+
+    this.routeProjectedCoordsMulti = [];
+    this.routeDistancesMulti = [];
+
+    let allCoords: number[][] = [];
+
+    results.forEach((result, index) => {
+      const tmcFeatures = buildTmcFeatures(result.tmcs);
+      for (const f of tmcFeatures) {
+        const status = (f.get("tmcStatus") ?? "unknown") as AmapTmcStatus;
+        f.setStyle(getStyle("tmcLine", { status, width: 6 }));
+        source.addFeature(f);
+      }
+
+      const fullProjected = result.fullPath.map((p) => olProj.fromLonLat(p));
+      this.routeProjectedCoordsMulti.push(fullProjected);
+      this.routeDistancesMulti.push(buildProjectedDistanceIndex(fullProjected));
+      allCoords = allCoords.concat(fullProjected);
+    });
+
+    if (!preserveDistance) {
+      this.lastVehicleRotations = results.map(() => null);
+      this.currentDistances = results.map(() => 0);
+    }
+    
+    this.navFinishedEmitted = false;
+
+    if (allCoords.length >= 2) {
+      const extent = new LineString(allCoords).getExtent();
+      this.map.getView().fit(extent, { padding: [40, 40, 40, 40], duration: 300 });
+    }
+
+    this.ensureVehicles(source, results.length);
+    this.startVehicleAnimationMulti(preserveDistance);
+  }
+
+  private ensureVehicles(source: VectorSource, count: number) {
+    while (this.vehicleFeatures.length < count) {
+      this.vehicleFeatures.push(new Feature({ geometry: new Point([0, 0]) }));
+    }
+    for (let i = 0; i < count; i++) {
+      sourceAddOnce(source, this.vehicleFeatures[i]);
+    }
+  }
+
+  private startVehicleAnimationMulti(preserveDistance: boolean) {
+    if (this.vehicleFeatures.length === 0) return;
+    if (this.rafId) {
+      window.cancelAnimationFrame(this.rafId);
+      this.rafId = null;
+    }
+    const now = performance.now();
+
+    const loop = this.options.loop ?? false;
+    const speeds = this.routeDistancesMulti.map(dists => {
+      const total = dists[dists.length - 1] ?? 0;
+      return computeSpeedMps(total, this.options);
+    });
+
+    if (preserveDistance) {
+      // Keep animationStartTs as is, or recalculate based on max distance?
+      // Since it's multi, we might just set animationStartTs to now and adjust currentDistances.
+      this.animationStartTs = now; // Actually it's complex to preserve exact distances for multiple without individual startTs
+    } else {
+      this.currentDistances = speeds.map(() => 0);
+      this.animationStartTs = now;
+      this.lastVehicleRotations = speeds.map(() => null);
+      this.navFinishedEmitted = false;
+    }
+
+    const tick = (ts: number) => {
+      const elapsed = (ts - this.animationStartTs) / 1000;
+      let allFinished = true;
+
+      this.vehicleFeatures.forEach((vehicleFeature, index) => {
+        const speed = speeds[index];
+        const dists = this.routeDistancesMulti[index];
+        const coords = this.routeProjectedCoordsMulti[index];
+        const total = dists[dists.length - 1] ?? 0;
+        
+        if (!total || coords.length < 2) return;
+
+        const rawDist = elapsed * speed + (preserveDistance ? this.currentDistances[index] : 0);
+        const targetDist = loop ? rawDist % total : Math.min(rawDist, total);
+        
+        if (!preserveDistance) {
+          this.currentDistances[index] = targetDist;
+        }
+
+        const { point, bearing } = interpolateOnLine(coords, dists, targetDist);
+        if (point) {
+          (vehicleFeature.getGeometry() as Point).setCoordinates(point);
+          const offset = this.options.vehicleHeadingOffsetRad ?? Math.PI / 2;
+          const desiredRotation = -bearing + offset;
+          const rotation = normalizeAngleNear(desiredRotation, this.lastVehicleRotations[index]);
+          this.lastVehicleRotations[index] = rotation;
+          vehicleFeature.setStyle(
+            getStyle("vehicle", {
+              src: this.options.vehicleIconSrc,
+              rotation,
+              scale: 0.65,
+            })
+          );
+        }
+
+        if (loop || targetDist < (total - 60 * 3)) {
+          allFinished = false;
+        }
+      });
+
+      if (allFinished && !this.navFinishedEmitted) {
+        this.navFinishedEmitted = true;
+        if (this.timerId) {
+          window.clearInterval(this.timerId);
+          this.timerId = null;
+        }
+        useTabsStore().setActiveTab(2);
+      } else {
+        this.rafId = window.requestAnimationFrame(tick);
+      }
+    };
+    this.rafId = window.requestAnimationFrame(tick);
+  }
+
   async planAndStart(origin: LngLat, destination: LngLat) {
     this.stop();
     if (!this.options.amapKey) return;
@@ -911,6 +1083,17 @@ export class AmapRealtimeNav {
         destination,
         extensions: "all",
       });
+      // 路径数据和（临时）警情位置
+      useDispatchStore().setDispatch({
+        navPathPlanData: {
+          [destination.join(",").toString()]: result,
+        },
+        alarmData: {
+          gisX: destination[0],
+          gisY: destination[1],
+        }
+      });
+
       this.renderRoute(result, preserveDistance);
     };
 
@@ -1010,13 +1193,6 @@ export class AmapRealtimeNav {
           window.clearInterval(this.timerId);
           this.timerId = null;
         }
-        // EventBus.emit(NAV_FINISHED_EVENT, {
-        //   origin: this.originLngLat ?? undefined,
-        //   destination: this.destinationLngLat ?? undefined,
-        //   endPoint: this.pickEnd ?? undefined,
-        //   finishedAt: Date.now(),
-        // } as NavFinishedPayload);
-
         // tabs切换地图模式
         useTabsStore().setActiveTab(2);
 

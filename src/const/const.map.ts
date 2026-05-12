@@ -36,7 +36,7 @@ export const CARD_TITLE = {
   Polygon: "标面",
   Circle: "画圆",
   Rect: "画矩形",
-};
+} as const;
 
 // 标线 线条样式
 export const LINE_FORM_LINE_STYLES = [

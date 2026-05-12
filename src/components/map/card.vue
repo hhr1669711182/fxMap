@@ -30,12 +30,16 @@ const handleClose = () => {
   setShowUuid("");
 };
 
+const handleSave = () => {
+  changeName(form.value.name);
+};
+
 const handleDelete = () => {
   let { marker: targetMarker, overlay: targetOverlay, feature } = getItem();
   if (targetOverlay) {
     MapStore.map.removeOverlay(targetOverlay);
   }
-  const { vectorLayer } = cardstore.drawTool;
+  const vectorLayer = (cardstore.drawTool as any)?.vectorLayer;
   if (vectorLayer) {
     if (targetMarker) {
       vectorLayer.getSource().removeFeature(targetMarker);
@@ -48,9 +52,9 @@ const handleDelete = () => {
   setShowUuid("");
 };
 
-const changeName = (name) => {
+const changeName = (name: string) => {
   let cardName = !name ? "未命名" : name;
-  setItem({ name: cardName, uuid: showUuid });
+  setItem({ name: cardName, uuid: showUuid.value });
   form.value.name = cardName;
 
   const { overlay } = getItem();
@@ -119,7 +123,7 @@ const formComponent = computed(() => {
             <component :is="formComponent" :formData="form" />
           </div>
           <div class="card_body_footer">
-            <el-button type="primary">保存</el-button>
+            <el-button type="primary" @click="handleSave">保存</el-button>
             <el-button @click="handleDelete">删除</el-button>
           </div>
         </div>

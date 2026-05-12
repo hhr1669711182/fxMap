@@ -1,72 +1,92 @@
-<!--
- * @Author: huanghuanrong
- * @Date: 2026-03-31 15:30:08
- * @LastEditTime: 2026-04-10 15:25:08
- * @LastEditors: huanghuanrong
- * @Description: 文件描述
- * @FilePath: \OpenlayersMap\README.md
--->
-# OpenlayersMap
+# ids-gis-web
 
-基于 Vue3 + OpenLayers 的 Web GIS 交互示例工程，包含底图切换、常用地图控件、绘制测量、路径规划与消防调派演示、点位弹窗与 iframe 面板联动等能力。
+gis web端
 
-## 技术栈
+## Getting started
 
-- Vue 3 + TypeScript
-- Vite
-- OpenLayers + ol-ext
-- Pinia
-- Element Plus
+To make it easy for you to get started with GitLab, here's a list of recommended next steps.
 
-## 本地运行
+Already a pro? Just edit this README.md and make it your own. Want to make it easy? [Use the template at the bottom](#editing-this-readme)!
 
-```bash
-npm i
-npm run dev
+## Add your files
+
+- [ ] [Create](https://docs.gitlab.com/ee/user/project/repository/web_editor.html#create-a-file) or [upload](https://docs.gitlab.com/ee/user/project/repository/web_editor.html#upload-a-file) files
+- [ ] [Add files using the command line](https://docs.gitlab.com/ee/gitlab-basics/add-file.html#add-a-file-using-the-command-line) or push an existing Git repository with the following command:
+
+```
+cd existing_repo
+git remote add origin http://gitlab.telewave.tech/ids/web/ids-gis-web.git
+git branch -M main
+git push -uf origin main
 ```
 
-## 功能概览
+## Integrate with your tools
 
-### 地图基础
+- [ ] [Set up project integrations](http://gitlab.telewave.tech/ids/web/ids-gis-web/-/settings/integrations)
 
-- 底图：高德/Google/矢量图层组合
-- 控件：全屏、比例尺等（部分控件按需开启）
+## Collaborate with your team
 
-### 绘制与测量
+- [ ] [Invite team members and collaborators](https://docs.gitlab.com/ee/user/project/members/)
+- [ ] [Create a new merge request](https://docs.gitlab.com/ee/user/project/merge_requests/creating_merge_requests.html)
+- [ ] [Automatically close issues from merge requests](https://docs.gitlab.com/ee/user/project/issues/managing_issues.html#closing-issues-automatically)
+- [ ] [Enable merge request approvals](https://docs.gitlab.com/ee/user/project/merge_requests/approvals/)
+- [ ] [Automatically merge when pipeline succeeds](https://docs.gitlab.com/ee/user/project/merge_requests/merge_when_pipeline_succeeds.html)
 
-- 点/线/面/圆/矩形绘制
-- 距离/面积/角度/方位角测量
-- 高级几何交互（相交运算：交/并/差）
+## Test and Deploy
 
-### 路径规划与调派演示
+Use the built-in continuous integration in GitLab.
 
-- Element Plus 自动补全：输入灾情位置/地图选点
-- 最近消防站匹配：从 `zhxfdzXYList` 计算最近队站作为起点
-- 驾车路线规划：拥堵分段着色（TMC）
-- 车辆沿路线动画：速度随路径长度动态计算、转向角平滑
+- [ ] [Get started with GitLab CI/CD](https://docs.gitlab.com/ee/ci/quick_start/index.html)
+- [ ] [Analyze your code for known vulnerabilities with Static Application Security Testing(SAST)](https://docs.gitlab.com/ee/user/application_security/sast/)
+- [ ] [Deploy to Kubernetes, Amazon EC2, or Amazon ECS using Auto Deploy](https://docs.gitlab.com/ee/topics/autodevops/requirements.html)
+- [ ] [Use pull-based deployments for improved Kubernetes management](https://docs.gitlab.com/ee/user/clusters/agent/)
+- [ ] [Set up protected environments](https://docs.gitlab.com/ee/ci/environments/protected_environments.html)
 
-### 点位与弹窗
+***
 
-- 消防站点位：地图初始化加载 `zhxfdzXYList` 图标
-- 点击队站：显示详情弹窗
-- 警情点位：告警图标 + 通用 overlay 模板弹窗（可扩展字段）
+# Editing this README
 
-### 面板联动（2.5D / 3D）
+When you're ready to make this README your own, just edit this file and use the handy template below (or feel free to structure it however you want - this is just a starting point!). Thank you to [makeareadme.com](https://www.makeareadme.com/) for this template.
 
-- 动画结束触发联动事件
-- 右上角固定面板（iframe）展示
-- postMessage 通信 + 广播
+## Suggestions for a good README
+Every project is different, so consider which of these sections apply to yours. The sections used in the template are suggestions for most open source projects. Also keep in mind that while a README can be too long and detailed, too long is better than too short. If you think your README is too long, consider utilizing another form of documentation rather than cutting out information.
 
-## 配置说明
+## Name
+Choose a self-explaining name for your project.
 
-### 行政区/城市配置
+## Description
+Let people know what your project can do specifically. Provide context and add a link to any reference visitors might be unfamiliar with. A list of Features or a Background subsection can also be added here. If there are alternatives to your project, this is a good place to list differentiating factors.
 
-`src/baseComponent/amap/data.json` 支持数组或对象，优先读取 `data` 字段：
+## Badges
+On some READMEs, you may see small images that convey metadata, such as whether or not all the tests are passing for the project. You can use Shields to add some to your README. Many services also have instructions for adding a badge.
 
-- `data.keywords`：行政区关键词（用于遮罩/边界）
-- `data.city`：输入提示城市限制
-- `data.boundaries`：可选边界缓存（为空则自动请求）
+## Visuals
+Depending on what you are making, it can be a good idea to include screenshots or even a video (you'll frequently see GIFs rather than actual videos). Tools like ttygif can help, but check out Asciinema for a more sophisticated method.
 
-### WebService Key
+## Installation
+Within a particular ecosystem, there may be a common way of installing things, such as using Yarn, NuGet, or Homebrew. However, consider the possibility that whoever is reading your README is a novice and would like more guidance. Listing specific steps helps remove ambiguity and gets people to using your project as quickly as possible. If it only runs in a specific context like a particular programming language version or operating system or has dependencies that have to be installed manually, also add a Requirements subsection.
 
-高德 Web 服务 Key 建议通过运行时输入并写入 `localStorage`，避免将敏感信息写入仓库。
+## Usage
+Use examples liberally, and show the expected output if you can. It's helpful to have inline the smallest example of usage that you can demonstrate, while providing links to more sophisticated examples if they are too long to reasonably include in the README.
+
+## Support
+Tell people where they can go to for help. It can be any combination of an issue tracker, a chat room, an email address, etc.
+
+## Roadmap
+If you have ideas for releases in the future, it is a good idea to list them in the README.
+
+## Contributing
+State if you are open to contributions and what your requirements are for accepting them.
+
+For people who want to make changes to your project, it's helpful to have some documentation on how to get started. Perhaps there is a script that they should run or some environment variables that they need to set. Make these steps explicit. These instructions could also be useful to your future self.
+
+You can also document commands to lint the code or run tests. These steps help to ensure high code quality and reduce the likelihood that the changes inadvertently break something. Having instructions for running tests is especially helpful if it requires external setup, such as starting a Selenium server for testing in a browser.
+
+## Authors and acknowledgment
+Show your appreciation to those who have contributed to the project.
+
+## License
+For open source projects, say how it is licensed.
+
+## Project status
+If you have run out of energy or time for your project, put a note at the top of the README saying that development has slowed down or stopped completely. Someone may choose to fork your project or volunteer to step in as a maintainer or owner, allowing your project to keep going. You can also make an explicit request for maintainers.

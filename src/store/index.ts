@@ -1,10 +1,10 @@
 /*
- * @Author: huanghuanrong
+ * @Author: hhr
  * @Date: 2026-03-31 15:30:08
- * @LastEditTime: 2026-04-09 17:11:14
- * @LastEditors: huanghuanrong
+ * @LastEditTime: 2026-04-21 18:12:45
+ * @LastEditors: hhr
  * @Description: 文件描述
- * @FilePath: \OpenlayersMap\src\store\index.ts
+ * @FilePath: \ids-gis-web\src\store\index.ts
  */
 export * from './useCommonStore.ts'
 
@@ -21,3 +21,7 @@ export * from "./useModalMap.ts";
 export * from "./usePanelStore.ts";
 
 export * from "./useTabsStore.ts";
+
+export * from "./useDispatchStore.ts";
+
+export * from "./useMessageStore.ts";

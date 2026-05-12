@@ -1,10 +1,18 @@
+<!--
+ * @Author: hhr
+ * @Date: 2026-04-16 14:00:56
+ * @LastEditTime: 2026-05-07 11:31:04
+ * @LastEditors: huanghuanrong
+ * @Description: 文件描述
+ * @FilePath: \ids-gis-web\src\components\Icon\src\Icon.vue
+-->
 <script setup lang="ts">
 import { computed, unref } from "vue";
 // import { ElIcon } from 'element-plus'
-import { propTypes } from "@/utils/propTypes";
-import { useDesign } from "@/hooks/web/useDesign";
+import { propTypes } from "@/util/propTypes";
+import { useDesign } from "@/hooks/useDesign";
 import { Icon } from "@iconify/vue";
-import { ICON_PREFIX } from "@/constants";
+import { ICON_PREFIX } from "@/const/const.common";
 
 const { getPrefixCls } = useDesign();
 

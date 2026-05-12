@@ -1,10 +1,10 @@
 /*
  * @Author: huanghuanrong
  * @Date: 2026-03-31 15:30:08
- * @LastEditTime: 2026-04-15 12:08:03
+ * @LastEditTime: 2026-05-12 18:18:12
  * @LastEditors: huanghuanrong
  * @Description: 文件描述
- * @FilePath: \OpenlayersMap\vite.config.ts
+ * @FilePath: \ids-gis-web\vite.config.ts
  */
 import { defineConfig, loadEnv } from "vite";
 import vue from "@vitejs/plugin-vue";
@@ -20,7 +20,6 @@ import { fileURLToPath, URL } from "node:url";
 import { resolve } from "node:path";
 // import { resolve } from "path";
 
-// https://vitejs.dev/config/
 export default defineConfig(({ mode, command }) => {
   const env = loadEnv(mode, process.cwd(), "");
   const isDev = command === "serve";
@@ -30,7 +29,7 @@ export default defineConfig(({ mode, command }) => {
     plugins: [
       vue(),
       vueJsx(),
-      VueDevTools(),
+      // VueDevTools(),
       UnoCSS(),
       AutoImport({
         imports: ["vue", "vue-router", "pinia"],
@@ -49,6 +48,14 @@ export default defineConfig(({ mode, command }) => {
       // qiankun("vue-openlayers-app", { useDevMode: true }),
     ],
     base: isLib ? "/" : "./",
+     css: {
+      preprocessorOptions: {
+        less: {
+          additionalData: '@import "./src/styles/variables.module.less";',
+          javascriptEnabled: true
+        }
+      }
+    },
     resolve: {
       alias: {
         "@": fileURLToPath(new URL("./src", import.meta.url)),

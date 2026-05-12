@@ -4,6 +4,7 @@ import { storeToRefs } from "pinia";
 import { useMapStore, useCardStore, useTopicLayerStore, usePanelStore } from "@/store";
 import { TYPES, PANEL_TYPES, DRAW_TYPES } from "@/const";
 import { useResponsive } from "@/composables/useResponsive.ts";
+import { Type } from "ol/geom/Geometry";
 
 const { isMobile } = useResponsive();
 const { map } = storeToRefs(useMapStore());
@@ -13,7 +14,13 @@ const panelStore = usePanelStore();
 const topicLayerStore = useTopicLayerStore();
 const mobileMenuVisible = ref(false);
 
-const handleClickOpIcon = (type: string) => {
+const handleClickOpIcon = (type: Type) => {
+  const isDrawType = Object.values(DRAW_TYPES).includes(type);
+  console.log(type, "🚀 ~ handleClickOpIcon ~ isDrawType:", isDrawType)
+  if (!isDrawType) {
+    cardStore.clearDrawTool();
+  }
+
   active.value = type;
   
   // 路径规划
@@ -25,8 +32,8 @@ const handleClickOpIcon = (type: string) => {
     topicLayerStore.setVisible(true);
   }
   // 画图工具
-  else if (Object.values(DRAW_TYPES).includes(type)) {
-    cardStore.setMapDrawTool({ drawType: type, map: toRaw(map.value) });
+  else if (isDrawType) {
+    cardStore.setMapDrawTool({ drawType: type, map: toRaw(map.value) as any });
   }
   
   // 移动端点击后关闭菜单
@@ -47,7 +54,7 @@ const menuItems = [
   { text: "测面", icon: "#icon-measure-polygon", type: TYPES.MEASUREPOLYGON },
   { text: "路径规划", icon: "#icon-route", type: TYPES.PATHPLAN },
   { text: "专题图", icon: "#icon-topic-layers", type: TYPES.TOPICTYPES },
-];
+] as any;
 
 // 移动端菜单分组
 const mobileMenuGroups = computed(() => {

@@ -3,7 +3,7 @@ import Map from "ol/Map";
 import Feature from "ol/Feature";
 import { Style, Stroke } from "ol/style";
 import Overlay from "ol/Overlay";
-import { Draw, Interaction } from "ol/interaction";
+import { Draw } from "ol/interaction";
 import { getDistance } from "ol/sphere";
 import { transform } from "ol/proj";
 import { unByKey } from "ol/Observable";
@@ -33,15 +33,14 @@ export class MeasureDistanceTool extends BaseTool {
     }),
   });
 
-  draw!: Interaction;
-
+  draw!: Draw;
   listenGeometryChange: any;
-
   sketch!: Feature | null;
+  measureTooltip!: Overlay;
 
   init() {
     this.draw = new Draw({
-      source: this.vectorLayer?.getSource(),
+      source: (this.vectorLayer as any)?.getSource(),
       type: "LineString",
       style: this.lineStyle,
     });
@@ -53,27 +52,21 @@ export class MeasureDistanceTool extends BaseTool {
       dragging: boolean;
     }) => {
       const { coordinate, dragging } = evt;
-      if (dragging) {
-        return;
-      }
-      let helpMsg = "";
+      if (dragging) return;
 
-      helpMsg = this.sketch
-        ? "移动鼠标，点击左键确定下一点位，鼠标右键结束距离测量"
-        : "选择起点，左键单击确认";
+      const helpMsg = this.sketch
+        ? "Move and click to add point, right click to finish"
+        : "Click to choose start point";
 
       this.helpTooltip.setPosition(coordinate);
-
       this.helpTooltipElement.innerHTML = helpMsg;
       this.helpTooltipElement.style.display = "block";
     };
 
-    this.map.on("pointermove", this.setHelpTooltip);
-
-    this.draw.on("drawstart", this.handleMeasureLineStart.bind(this));
-    this.draw.on("drawend", this.handleMeasureLineEnd.bind(this));
+    this.map.on("pointermove" as any, this.setHelpTooltip as any);
+    this.draw.on("drawstart", this.handleMeasureLineStart.bind(this) as any);
+    this.draw.on("drawend", this.handleMeasureLineEnd.bind(this) as any);
   }
-  measureTooltip!: Overlay;
 
   handleMeasureLineStart(evt: {
     feature: Feature<Geometry>;
@@ -88,64 +81,73 @@ export class MeasureDistanceTool extends BaseTool {
     });
 
     const { feature, coordinate } = evt;
-
     this.sketch = feature;
-
     let tooltipCoord = coordinate;
 
-    this.listenGeometryChange = feature.getGeometry().on("change", (evt) => {
+    this.listenGeometryChange = feature.getGeometry()?.on("change", (evt: any) => {
       const geom = evt.target;
-      let output = formatLength(geom);
-
-      let startPoint = geom.getFirstCoordinate();
-
-      this.addMarker({ coordinate: startPoint });
-
-      tooltipCoord = geom.getLastCoordinate(); // 折线的最后一个点的坐标
-
-      this.measureTooltip.getElement().innerHTML = "总长" + output; // 显示计算后的距离
-
-      this.measureTooltip.setPosition(tooltipCoord);
-
-      // 展示分段距离
-      const coordinates = geom.getCoordinates().slice(0, -1);
-      for (let i = 0; i < coordinates.length; i++) {
-        const start = coordinates[i];
-        this.formatPonit(start);
-        const end = coordinates[i + 1];
-        if (!end) {
-          continue;
-        }
-        if (tooltipCoord.join("") != end.join("")) {
-          const start4326 = transform(start, "EPSG:3857", "EPSG:4326");
-          const end4326 = transform(end, "EPSG:3857", "EPSG:4326");
-          const distance = getDistance(start4326, end4326);
-          this.createOverlay({
-            coordinate: end,
-            offset: [0, -15],
-            className: "ol-tooltip ol-tooltip-measure",
-            stopEvent: false,
-            content: formatDistance(distance),
-          });
-        }
+      tooltipCoord = geom.getLastCoordinate();
+      const tooltipElement = this.measureTooltip.getElement();
+      if (tooltipElement) {
+        tooltipElement.innerHTML = "总长" + formatLength(geom);
       }
+      this.measureTooltip.setPosition(tooltipCoord);
     });
   }
 
   handleMeasureLineEnd(evt: { feature: Feature }) {
-    // 显示距离的div设置类名
-    this.measureTooltip.getElement().className = "ol-tooltip ol-tooltip-static";
-    this.measureTooltip.setOffset([0, -7]);
+    const geom = evt.feature.getGeometry() as any;
+    const coordinates = geom?.getCoordinates?.() ?? [];
 
+    coordinates.forEach((start: Coordinate, index: number) => {
+      this.formatPonit(start);
+      const end = coordinates[index + 1];
+      if (!end) return;
+
+      const start4326 = transform(start, "EPSG:3857", "EPSG:4326");
+      const end4326 = transform(end, "EPSG:3857", "EPSG:4326");
+      const distance = getDistance(start4326, end4326);
+      this.createOverlay({
+        coordinate: end,
+        offset: [0, -15],
+        className: "ol-tooltip ol-tooltip-measure",
+        stopEvent: false,
+        content: formatDistance(distance),
+      });
+    });
+
+    const tooltipElement = this.measureTooltip.getElement();
+    if (tooltipElement) {
+      tooltipElement.className = "ol-tooltip ol-tooltip-static";
+    }
+    this.measureTooltip.setOffset([0, -7]);
     evt.feature.setStyle(this.lineStyle);
 
-    unByKey(this.listenGeometryChange);
+    this.cleanup(false);
+    super.destroy();
+  }
 
-    this.map.removeInteraction(this.draw);
-
+  private cleanup(removeMeasureTooltip: boolean) {
+    if (this.listenGeometryChange) {
+      unByKey(this.listenGeometryChange);
+      this.listenGeometryChange = null;
+    }
+    if (this.draw) {
+      this.map.removeInteraction(this.draw);
+    }
+    this.map.un("pointermove" as any, this.setHelpTooltip as any);
     this.mapEl?.classList.remove("draw");
-
     this.helpTooltipElement.style.display = "none";
-    this.map.un("pointermove", this.setHelpTooltip);
+
+    if (removeMeasureTooltip && this.measureTooltip) {
+      this.map.removeOverlay(this.measureTooltip);
+    }
+
+    this.sketch = null;
+  }
+
+  destroy() {
+    this.cleanup(true);
+    super.destroy();
   }
 }

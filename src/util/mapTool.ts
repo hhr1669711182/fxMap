@@ -1,3 +1,11 @@
+/*
+ * @Author: hhr
+ * @Date: 2026-04-16 14:00:56
+ * @LastEditTime: 2026-04-21 18:27:45
+ * @LastEditors: hhr
+ * @Description: 文件描述
+ * @FilePath: \ids-gis-web\src\util\mapTool.ts
+ */
 import * as sphere from "ol/sphere";
 import { Style, Stroke, Icon } from "ol/style";
 import { Geometry, Point } from "ol/geom";

@@ -147,6 +147,23 @@ export class MeasureAngleTool extends BaseTool {
     this.helpTooltipElement.style.display = "none";
     this.map.un("pointermove", this.setHelpTooltip);
     this.Points = [];
+    super.destroy();
+  }
+
+  destroy() {
+    if (this.listenGeometryChange) {
+      unByKey(this.listenGeometryChange);
+      this.listenGeometryChange = null;
+    }
+    if (this.draw) {
+      this.map.removeInteraction(this.draw);
+    }
+    this.map.un("pointermove", this.setHelpTooltip);
+    if (this.marker) {
+      this.vectorLayer?.getSource().removeFeature(this.marker);
+    }
+    this.Points = [];
+    super.destroy();
   }
 
   addAngleMark({

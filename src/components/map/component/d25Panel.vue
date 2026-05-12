@@ -13,6 +13,8 @@ import {
   NAV_FINISHED_EVENT,
   type NavFinishedPayload,
 } from "../../../baseComponent/amap/useAmapTools.ts";
+import { useMessageStore } from "@/store/useMessageStore";
+import { MESSAGE_SYSTEM } from "@/const/const.message.type";
 
 const IFRAME_BROADCAST_EVENT = "iframe:broadcast";
 
@@ -92,6 +94,8 @@ const onMessage = (e: MessageEvent) => {
 };
 
 onMounted(() => {
+  const msgStore = useMessageStore()
+  msgStore.registerIframe(MESSAGE_SYSTEM.PANEL_25D, () => iframeRef.value)
   window.addEventListener("message", onMessage);
   EventBus.on(NAV_FINISHED_EVENT as any, onNavFinished);
   EventBus.on(IFRAME_BROADCAST_EVENT as any, onBroadcast);
@@ -99,6 +103,7 @@ onMounted(() => {
 });
 
 onUnmounted(() => {
+  useMessageStore().unregisterIframe(MESSAGE_SYSTEM.PANEL_25D)
   window.removeEventListener("message", onMessage);
   EventBus.off(NAV_FINISHED_EVENT as any, onNavFinished);
   EventBus.off(IFRAME_BROADCAST_EVENT as any, onBroadcast);

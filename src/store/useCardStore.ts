@@ -18,10 +18,13 @@ import {
   BaseTool,
 } from "../components/map/MapTools/index.ts";
 import { Type } from "ol/geom/Geometry";
-import { Feature, Overlay } from "ol";
 
 type ListItem = {
   uuid: string;
+  marker?: any;
+  overlay?: any;
+  feature?: any;
+  [key: string]: unknown;
 };
 
 interface CardStoreDataStruct {
@@ -29,7 +32,7 @@ interface CardStoreDataStruct {
   list: Array<ListItem>;
   showUuid: string;
   active: string;
-  drawTool: BaseTool | object;
+  drawTool: BaseTool | null;
   drawToolType: Type | string;
 }
 
@@ -47,12 +50,24 @@ export const useCardStore = defineStore("cardStore", {
       list: [],
       showUuid: "",
       active: "",
-      drawTool: {},
+      drawTool: null,
       drawToolType: "",
     };
   },
   actions: {
+    clearDrawTool() {
+      if (this.drawTool instanceof BaseTool) {
+        this.drawTool.destroy();
+      }
+      this.drawTool = null;
+      this.drawToolType = "";
+      this.active = "";
+    },
     setMapDrawTool({ drawType, map }: { drawType: Type; map: Map }) {
+      console.log("🚀 ~ this.drawTool:", this.drawTool);
+      if (this.drawTool instanceof BaseTool) {
+        this.drawTool.destroy();
+      }
       this.drawToolType = drawType;
       let uuid = uuidv4().replace(/-/g, "");
 
@@ -122,10 +137,11 @@ export const useCardStore = defineStore("cardStore", {
         }
       });
     },
-    getItem(): { marker?: Feature; overlay?: Overlay; feature?: Feature } {
-      return this.list.filter(
-        (i: { uuid: string }) => i.uuid == this.showUuid
-      )[0];
+    getItem(): ListItem {
+      return (
+        this.list.find((i: { uuid: string }) => i.uuid == this.showUuid) ||
+        ({} as ListItem)
+      );
     },
     removeItem(item: { uuid: string }) {
       this.list = this.list.filter((i) => i.uuid != item.uuid);

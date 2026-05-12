@@ -4,7 +4,7 @@ import { LAYER_NAMES } from "../../baseComponent/OpenlayersMap/layers.ts";
 import { MODAL_SETTING } from "../../const/const.modals.ts";
 import { useMapStore, useModalStore, usePanelStore } from "../../store/index";
 
-const mapStore = useMapStore();
+const mapStore: any = useMapStore();
 
 const modalStore = useModalStore();
 

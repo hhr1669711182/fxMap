@@ -1,69 +1,88 @@
 /*
  * @Author: huanghuanrong
- * @Date: 2026-04-13 18:52:23
- * @LastEditTime: 2026-04-16 11:43:56
+ * @Date: 2026-05-09 13:54:25
+ * @LastEditTime: 2026-05-12 10:34:09
  * @LastEditors: huanghuanrong
  * @Description: 文件描述
- * @FilePath: \OpenlayersMap\src\router\index.ts
+ * @FilePath: \ids-gis-web\src\router\index.ts
  */
-import { createRouter, createWebHashHistory, createMemoryHistory } from 'vue-router'
+import { createRouter, createWebHashHistory, type RouteRecordRaw } from 'vue-router'
+import type { App } from 'vue'
+import MainLayout from '@/layout/MainLayout.vue'
+import ThreejsViewerRegion from '@/views/region.vue'
+import ThreejsViewerBuilding from '@/views/building.vue'
+import { setupRouterGuard } from './guard'
+import { unregisterDynamicRoutes } from './dynamic'
+import { ROUTE_NAMES } from './constants'
 
-// 引入你的页面
-import ThreejsViewerRegion from '@/views/region.vue'   // 火灾/建筑页面
-import ThreejsViewerBuilding from '@/views/building.vue'     // 你新增的页面
-import { App } from 'vue'
-
-const routes = [
+export const staticRoutes: RouteRecordRaw[] = [
   {
     path: '/',
+    name: ROUTE_NAMES.ROOT,
     redirect: '/map',
-    component: () => import('@/layout/MainLayout.vue'),
+    component: MainLayout,
     children: [
       {
-        path: '/map',
-        name: 'map',
-        component: () => import('@/views/home.vue')
+        path: 'map',
+        name: ROUTE_NAMES.MAP,
+        component: () => import('@/views/home.vue'),
+        meta: {
+          title: '地图',
+        },
       },
       {
-        path: '/test',
-        name: 'test',
-        component: () => import('@/views/test/index.vue')
+        path: 'test',
+        name: ROUTE_NAMES.TEST,
+        component: () => import('@/views/test/index.vue'),
+        meta: {
+          title: '测试',
+        },
       },
-      // {
-      //   path: '/ThreejsViewerRegion',
-      //   name: 'ThreejsViewerRegion',
-      //   component: ThreejsViewerRegion
-      // },
-      // {
-      //   path: '/ThreejsViewerBuilding',      // 路由地址
-      //   name: 'ThreejsViewerBuilding',   // 名称
-      //   component: ThreejsViewerBuilding // 对应页面
-      // }
-    ]
+      {
+        path: 'ThreejsViewerRegion',
+        name: ROUTE_NAMES.THREE_REGION,
+        component: ThreejsViewerRegion,
+        meta: {
+          title: '区域三维',
+        },
+      },
+      {
+        path: 'ThreejsViewerBuilding',
+        name: ROUTE_NAMES.THREE_BUILDING,
+        component: ThreejsViewerBuilding,
+        meta: {
+          title: '建筑三维',
+        },
+      },
+    ],
+  },
+  {
+    path: '/:pathMatch(.*)*',
+    redirect: '/map',
   },
 
 ]
 
+const staticRouteNames = new Set(
+  staticRoutes
+    .flatMap((route) => [route, ...(route.children ?? [])])
+    .map((route) => route.name)
+    .filter(Boolean),
+)
+
 const router = createRouter({
   history: createWebHashHistory(),
-  routes
+  routes: staticRoutes,
 })
 
-router.beforeEach((to, _from, next) => {
-  const token = localStorage.getItem('token')
-  // if (to.name !== 'Login' && !token) {
-  //   next()
-  // } else {
-  //   next()
-  // }
-  next()
-})
-
+setupRouterGuard(router)
 
 export const resetRouter = (): void => {
+  unregisterDynamicRoutes()
+
   router.getRoutes().forEach((route) => {
     const { name } = route
-    if (name && !['map', 'Login'].includes(name as string)) {
+    if (name && !staticRouteNames.has(name)) {
       router.hasRoute(name) && router.removeRoute(name)
     }
   })

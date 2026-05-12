@@ -117,6 +117,22 @@ export class MeasureAreaTool extends BaseTool {
 
       this.helpTooltipElement.style.display = "none";
       this.map.un("pointermove", this.setHelpTooltip);
+      super.destroy();
     });
+  }
+
+  destroy() {
+    if (this.listener) {
+      unByKey(this.listener);
+    }
+    if (this.draw) {
+      this.map.removeInteraction(this.draw);
+    }
+    this.map.un("pointermove", this.setHelpTooltip);
+    if (this.sketch && this.measureTooltip) {
+      this.map.removeOverlay(this.measureTooltip);
+    }
+    this.sketch = null;
+    super.destroy();
   }
 }

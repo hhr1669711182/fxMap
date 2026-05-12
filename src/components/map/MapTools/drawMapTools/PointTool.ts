@@ -59,5 +59,10 @@ export class PointTool extends BaseTool {
     this.drawIng = false;
 
     this.mapEl?.classList.remove("draw");
+    super.destroy();
+  }
+
+  destroy() {
+    this.removeListener();
   }
 }

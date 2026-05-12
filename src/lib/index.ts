@@ -1,19 +1,26 @@
+/*
+ * @Author: hhr
+ * @Date: 2026-04-16 14:00:56
+ * @LastEditTime: 2026-04-22 18:15:42
+ * @LastEditors: hhr
+ * @Description: 文件描述
+ * @FilePath: \ids-gis-web\src\lib\index.ts
+ */
 import { createApp } from "vue";
 import type { App as VueApp } from "vue";
 import { createPinia, setActivePinia } from "pinia";
 import type { Emitter } from "mitt";
+import piniaPluginPersistedstate from 'pinia-plugin-persistedstate'
 
 // import ElementPlus from "element-plus";
 import "element-plus/dist/index.css";
 import "virtual:svg-icons-register";
 import "virtual:uno.css";
 import "../style.css";
-import "../styles/day.css";
-import "../styles/night.css";
+import "../styles/index.less";
 import { drag } from "../directives/index.ts";
 import App from "../App.vue";
 import router from "../router";
-
 export interface MountOptions {
   /**
    * 挂载的 DOM 节点或选择器
@@ -45,6 +52,7 @@ export function mountApp(options: MountOptions): AppInstance {
 
   // 1. 初始化并挂载 Pinia
   const pinia = createPinia();
+  pinia.use(piniaPluginPersistedstate);
   setActivePinia(pinia);
   app.use(pinia);
 
@@ -74,3 +82,6 @@ export function mountApp(options: MountOptions): AppInstance {
     },
   };
 }
+
+export * from '@/plugins/mapPlugins';
+export * from '@/plugins/crypto';

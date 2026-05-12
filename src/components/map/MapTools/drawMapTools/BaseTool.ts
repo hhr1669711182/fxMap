@@ -1,6 +1,5 @@
 import Map from "ol/Map";
 import { Coordinate } from "ol/coordinate";
-import BaseLayer from "ol/layer/Base";
 import { Type } from "ol/geom/Geometry";
 import { Point } from "ol/geom";
 import Overlay, { Positioning } from "ol/Overlay";
@@ -8,19 +7,32 @@ import Feature from "ol/Feature";
 import { Style, Icon, Circle, Stroke, Fill } from "ol/style";
 import { getSVGForSrcById } from "../../../../util/index.ts";
 import { LAYER_NAMES } from "../../../../baseComponent/OpenlayersMap/layers.ts";
-import VectorLayer from "ol/layer/Vector";
 
 export class BaseTool {
   map: Map;
   callback: Function = () => {};
   mapEl = document.querySelector(".ol-viewport");
   uuid: string = "";
-  vectorLayer: VectorLayer | BaseLayer | undefined;
+  vectorLayer: any;
   type: Type;
-  helpTooltip!: Overlay; //提示文本
+  helpTooltip!: Overlay;
   setHelpTooltip: Function = () => void 0;
-  helpTooltipElement!: Element;
-  drawIng!: boolean; //是否在绘制
+  helpTooltipElement!: HTMLElement;
+  drawIng = false;
+
+  private destroyed = false;
+
+  private handleViewportMouseLeave = () => {
+    if (this.helpTooltipElement) {
+      this.helpTooltipElement.style.display = "none";
+    }
+  };
+
+  private handleViewportMouseEnter = () => {
+    if (this.drawIng && this.helpTooltipElement) {
+      this.helpTooltipElement.style.display = "block";
+    }
+  };
 
   constructor({
     map,
@@ -45,21 +57,13 @@ export class BaseTool {
     this.helpTooltip = this.createOverlay({
       coordinate: [0, 0],
       offset: [15, 0],
-      element: document.querySelector("#helpTxt"),
+      element: document.querySelector("#helpTxt") as HTMLElement | null,
       positioning: "center-left",
     });
 
-    this.helpTooltipElement = this.helpTooltip.getElement();
-
-    this.map.getViewport().addEventListener("mouseleave", () => {
-      this.helpTooltipElement.style.display = "none";
-    });
-
-    this.map.getViewport().addEventListener("mouseenter", () => {
-      if (this.drawIng) {
-        this.helpTooltipElement.style.display = "block";
-      }
-    });
+    this.helpTooltipElement = this.helpTooltip.getElement() as HTMLElement;
+    this.map.getViewport().addEventListener("mouseleave", this.handleViewportMouseLeave);
+    this.map.getViewport().addEventListener("mouseenter", this.handleViewportMouseEnter);
   }
 
   createOverlay({
@@ -78,10 +82,10 @@ export class BaseTool {
     offset: Array<number>;
     stopEvent?: boolean;
     insertFirst?: boolean;
-    element?: Element | null;
+    element?: HTMLElement | null;
     positioning?: Positioning;
   }) {
-    var overlay = new Overlay({
+    const overlay = new Overlay({
       element:
         element ||
         this.createOverlayElement({
@@ -110,7 +114,7 @@ export class BaseTool {
     uuid: string;
     className: string;
   }) {
-    var element = document.createElement("div");
+    const element = document.createElement("div");
     element.className = className || `popOverlay`;
     element.id = `overlay_${uuid}`;
     element.innerHTML = content;
@@ -131,12 +135,12 @@ export class BaseTool {
     rotation?: number;
   }) {
     const { uuid, vectorLayer } = this;
-    let marker = new Feature({
+    const marker = new Feature({
       id: uuid,
       geometry: new Point(coordinate),
     });
 
-    var markerStyle = new Style({
+    const markerStyle = new Style({
       image: new Icon({
         anchor: anchor,
         src: getSVGForSrcById({ symbolId, color }),
@@ -172,7 +176,23 @@ export class BaseTool {
     );
     this.vectorLayer?.getSource().addFeature(pointFeature);
   }
-  init() {
-    /*** 实例化后执行初始化方法*/
+
+  init() {}
+
+  destroy() {
+    if (this.destroyed) return;
+    this.destroyed = true;
+
+    this.drawIng = false;
+    this.mapEl?.classList.remove("draw");
+    this.map.getViewport().removeEventListener("mouseleave", this.handleViewportMouseLeave);
+    this.map.getViewport().removeEventListener("mouseenter", this.handleViewportMouseEnter);
+
+    if (this.helpTooltipElement) {
+      this.helpTooltipElement.style.display = "none";
+    }
+    if (this.helpTooltip) {
+      this.map.removeOverlay(this.helpTooltip);
+    }
   }
 }

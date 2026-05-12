@@ -1,15 +1,16 @@
 <!--
  * @Author: huanghuanrong
  * @Date: 2026-03-31 15:30:08
- * @LastEditTime: 2026-04-15 17:32:58
- * @LastEditors: huanghuanrong
+ * @LastEditTime: 2026-04-29 16:59:28
+ * @LastEditors: hhr
  * @Description: 文件描述
- * @FilePath: \OpenlayersMap\src\App.vue
+ * @FilePath: \ids-gis-web\src\App.vue
 -->
 <script setup lang="ts">
 import { onBeforeMount } from "vue";
 // import home from "./views/home.vue";
 import IndexModal from "./components/Modals/index.vue";
+import { initMessage } from "./Control/initMessage";
 
 const container: Element | null = document.querySelector("#svgBase");
 const fetchSymbols = () => {
@@ -24,6 +25,7 @@ const fetchSymbols = () => {
 
 onBeforeMount(() => {
   fetchSymbols();
+  initMessage();
 });
 </script>
 

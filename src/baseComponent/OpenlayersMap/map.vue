@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { onMounted, nextTick, onUnmounted, ref, computed } from "vue";
-import Map from "ol/Map";
+import { useListenParentMessage } from '@/hooks/usePostMessage';
+import OLMap from "ol/Map";
 import View from "ol/View";
 import * as olProj from "ol/proj";
 import OSM from "ol/source/OSM.js";
@@ -35,6 +36,8 @@ import { EventBus } from "../../util/mitt.ts";
 import { useTabsStore } from "@/store";
 import OverlayTemplate from "./overlayTemplate.vue";
 import type { AlarmData } from "../amap/useAmapTools.ts";
+import IncomingCallOverlay from "./IncomingCallOverlay.vue";
+import type { IncomingCallPayload } from "./IncomingCallOverlay.vue";
 
 import ljImg from "@/assets/svg/lj.svg";
 import xcImg from "@/assets/svg/xc.svg";
@@ -43,6 +46,12 @@ import zjImg from "@/assets/svg/jz.svg";
 // @ts-ignore
 import { publicLink } from "../../../public/publicLink.js";
 import { storeToRefs } from "pinia";
+import { addrCtrl, onPOIRequest, onRouteRequest } from "@/controller/map";
+import TileWMS from "ol/source/TileWMS";
+import { getWMSLayerOptions } from "@/apis/layers";
+import { getLayerConfig } from "@/config/layers";
+import { useLayersStore } from "@/store/useLayersStore";
+import { WebSocketClient } from "@/hooks/useWebSocket";
 
 const emit = defineEmits(["setMap"]);
 
@@ -50,7 +59,7 @@ const emit = defineEmits(["setMap"]);
 const { isMobile } = useResponsive();
 const { isTouchDevice } = useTouch();
 
-let map: Map | null = null;
+let map: OLMap | null = null;
 let nav: AmapRealtimeNav | null = null;
 const navPanelRef = ref<HTMLElement | null>(null);
 
@@ -60,12 +69,73 @@ const navVisible = ref(false);
 const fireSelected = ref<any | null>(null);
 let fireManager: { hide: () => void; destroy: () => void } | null = null;
 
+/** 已添加到地图的 WMS 图层（id -> ol.layer.Tile） */
+const layersStore = useLayersStore();
+const wmsLayerMap = new globalThis.Map<string, TileLayer<TileWMS>>();
+
+/**
+ * 处理图层切换：index.vue 透传过来，执行实际的 addLayer/removeLayer
+ * @param action 'add' | 'remove'
+ * @param id 图层配置 ID
+ */
+const addLayer = (id: string) => {
+  if (!map) return false
+
+  const config = getLayerConfig(id)
+  if (!config || wmsLayerMap.has(id)) return false
+
+  const options = getWMSLayerOptions(config)
+  const wmsLayer = new TileLayer({
+    source: new TileWMS({
+      url: options.url,
+      params: options.params,
+      serverType: options.serverType,
+      crossOrigin: options.crossOrigin,
+    }),
+    opacity: options.opacity,
+  })
+
+  map.addLayer(wmsLayer)
+  wmsLayerMap.set(id, wmsLayer)
+  return true
+}
+
+const removeLayer = (id: string) => {
+  if (!map) return false
+
+  const layer = wmsLayerMap.get(id)
+  if (!layer) return false
+
+  map.removeLayer(layer)
+  wmsLayerMap.delete(id)
+  return true
+}
+
+const syncLayers = (ids: string[]) => {
+  const targetIds = new Set(ids)
+
+  Array.from(wmsLayerMap.keys()).forEach((id) => {
+    if (!targetIds.has(id)) removeLayer(id)
+  })
+  ids.forEach((id) => addLayer(id))
+}
+
+defineExpose({
+  addLayer,
+  removeLayer,
+  syncLayers,
+})
+
 const alarmPopupRef = ref<HTMLElement | null>(null);
 const alarmPopupVisible = ref(false);
 const alarmData = ref<AlarmData | null>(null);
 let alarmOverlayManager:
   | { showAtAlarm: () => void; hide: () => void; destroy: () => void }
   | null = null;
+
+const incomingCallVisible = ref(false);
+const incomingCall = ref<IncomingCallPayload | null>(null);
+let incomingCallSocket: WebSocketClient | null = null;
 
 // 解析动态配置（支持数组与对象），优先 data 字段
 const configList = Array.isArray(amapData)
@@ -285,17 +355,19 @@ const pickOnMap = async (type: "start" | "end") => {
   } else {
     endText.value = picked.address;
     endCoord.value = picked.lngLat;
+
+    addrCtrl.send(picked);
   }
   activeDropdown.value = null;
 };
 
-const onFatherMessage = async (coord: [number, number], otherData: any) => {
+const onFatherMessage = async (coord: [number, number], otherData: any, fireBrigade = []) => {
   // tabs切换地图模式
   tabsStore.setActiveTab(1);
 
   endCoord.value = coord;
   alarmData.value = (otherData || null) as AlarmData | null;
-  startSimulate();
+  startSimulate(fireBrigade);
   // 逆地址解析，获取地址信息
   const address = await nav?.reverseGeocode(coord);
   endText.value = address || "";
@@ -304,7 +376,7 @@ const onFatherMessage = async (coord: [number, number], otherData: any) => {
   EventBus.emit("panelClose");
 };
 
-const startSimulate = async () => {
+const startSimulate = async (orgs?: any[]) => {
   if (!nav || !endCoord.value) return;
   const key = ensureAmapKey();
   if (!key) return;
@@ -313,20 +385,43 @@ const startSimulate = async () => {
 
   isPlanning.value = true;
   try {
-    const nearest = getNearestFireStation(endCoord.value);
-    if (!nearest) {
+    let nearests: any[] = []; 
+    let nearest = {} as any; 
+    if(orgs && orgs.length)  {
+      nearests = orgs;
+    } else {
+      nearest  = getNearestFireStation(endCoord.value);
+    }
+    
+    const starts: [number, number][] = nearests.length 
+      ? nearests.filter(org => Number.isFinite(org?.gisX) && Number.isFinite(org?.gisY)).map(org => [org.gisX, org.gisY])
+      : nearest?.station ? [[nearest.station.gisX, nearest.station.gisY]] : [];
+
+    if (!starts.length) {
       ElMessage.warning("未找到可用的消防站坐标");
       return;
     }
-    const start: [number, number] = [nearest.station.lng, nearest.station.lat];
-    startCoord.value = start;
-    startText.value = nearest.station.title;
+    
+    startCoord.value = starts[0];
+    startText.value = nearests.length ? nearests.map(org => org.orgName || org.title).join(", ") : nearest.station.title;
 
-    nav.setEndpoint("start", start);
+    starts.forEach((start, index) => {
+      if (index === 0) {
+        nav!.setEndpoint("start", start);
+      } else {
+        // 如果有多个起点，可以在地图上添加多个起点marker，但由于AmapRealtimeNav只有一个startMarker，
+        // 我们可以只显示第一个或者修改AmapRealtimeNav以支持多个startMarker。这里暂且只显示第一个。
+      }
+    });
+
     nav.setEndpoint("alarm", endCoord.value, { alarmData: alarmData.value || undefined });
-    // alarmPopupVisible.value = true;
     alarmOverlayManager?.showAtAlarm();
-    await nav.planAndStart(start, endCoord.value);
+    
+    if (starts.length > 1) {
+      await nav.planAndStartMulti(starts, endCoord.value);
+    } else {
+      await nav.planAndStart(starts[0], endCoord.value);
+    }
   } catch (e) {
     const msg = e instanceof Error ? e.message : "路径规划失败";
     ElMessage.error(msg);
@@ -369,6 +464,27 @@ const closeAlarmPopup = () => {
   alarmOverlayManager?.hide();
 };
 
+const closeIncomingCall = () => {
+  incomingCallVisible.value = false;
+};
+
+const startIncomingCallSocket = () => {
+  incomingCallSocket?.disconnect();
+
+  const socketUrl = import.meta.env.VITE_WS_URL || "ws://localhost:8787/";
+  incomingCallSocket = new WebSocketClient(socketUrl, {
+    reconnect: true,
+    heartbeat: true,
+    heartbeatInterval: 30000,
+    heartbeatMessage: "ping",
+    onMessage: (message) => {
+      if (message?.eventKey !== "incoming.call") return;
+      incomingCall.value = message.data as IncomingCallPayload;
+      incomingCallVisible.value = true;
+    },
+  });
+};
+
 /**
  * 初始化地图
  * 适配桌面端和H5手机端
@@ -391,7 +507,7 @@ const initMap = () => {
   const googleLayer = GOOGLE_LAYER;
   const vectorLayer = VECTOR_LAYER();
 
-  map = new Map({
+  map = new OLMap({
     layers: [amapLayer, googleLayer, vectorLayer],
     target: "map",
     view: new View({
@@ -469,6 +585,7 @@ const initMap = () => {
     xzKeywords: (regionCfg?.adcode as string) || "",
     vehicleIconSrc: carImg,
   });
+  (window as any).nav = nav;
 
   if (amapKey.value) {
     nav.loadMask((regionCfg?.boundaries as any) || []).catch(() => {});
@@ -491,17 +608,18 @@ const initMap = () => {
     });
   }
 
-  if (alarmPopupRef.value && nav) {
-    alarmOverlayManager = nav.mountAlarmOverlay({
-      element: alarmPopupRef.value,
-      onUpdate: (data) => {
-        alarmData.value = data;
-        alarmPopupVisible.value = !!data;
-      },
-    });
-  }
+  // if (alarmPopupRef.value && nav) {
+  //   alarmOverlayManager = nav.mountAlarmOverlay({
+  //     element: alarmPopupRef.value,
+  //     onUpdate: (data) => {
+  //       alarmData.value = data;
+  //       alarmPopupVisible.value = !!data;
+  //     },
+  //   });
+  // }
 
   emit("setMap", map);
+  syncLayers(layersStore.checkedIds);
 };
 
 /**
@@ -517,6 +635,8 @@ const cleanup = () => {
     nav = null;
   }
   if (map) {
+    wmsLayerMap.forEach((layer) => map?.removeLayer(layer));
+    wmsLayerMap.clear();
     map.dispose();
     map = null;
   }
@@ -547,18 +667,27 @@ onMounted(() => {
   nextTick(() => {
     initMap();
   });
+  startIncomingCallSocket();
   document.addEventListener("click", handleDocumentClick, true);
-  window.addEventListener("message", function (event) {
-    console.log("收到消息：", event, event.data);
-    // if (event.origin !== location.origin) return;
-    const { payload, otherData } = event.data; 
-    // const coord = event.data.payload as [number, number];
-    payload?.length >= 2 && onFatherMessage(payload, otherData);
 
+  // 监听上游系统消息 临时
+  useListenParentMessage((data) => {
+    console.log("收到消息：", data);
+    const { payload, otherData } = data;
+    payload?.length >= 2 && onFatherMessage(payload, otherData);
+  });
+
+  onRouteRequest((d: any) => onFatherMessage([d.alarmData.gisX, d.alarmData.gisY], d.alarmData.info, d.fireBrigade));
+  onPOIRequest((d: any) => onDisasterSelect({ location: d.lngLat, value: d.markerLabel }));
+  addrCtrl.receive(({ status }: any) => {
+    status && pickOnMap('end')
+    !status && clearNav()
   });
 });
 
 onUnmounted(() => {
+  incomingCallSocket?.disconnect();
+  incomingCallSocket = null;
   cleanup();
   document.removeEventListener("click", handleDocumentClick, true);
 });
@@ -579,8 +708,8 @@ onUnmounted(() => {
 </script>
 
 <template>
+    <!-- v-show="activeTab === 1" -->
   <div
-    v-show="activeTab === 1"
     id="map"
     :class="{ 'is-mobile': isMobile }"
     tabindex="2"
@@ -666,7 +795,7 @@ onUnmounted(() => {
           <el-button
             type="primary"
             :disabled="!canStart"
-            @click="startSimulate"
+            @click="() => startSimulate()"
           >
             {{ isPlanning ? "规划中..." : "开始" }}
           </el-button>
@@ -677,7 +806,14 @@ onUnmounted(() => {
   </div>
 
   <!-- tab panel 模型 -->
-  <div class="bottom_nav_tab">
+  <IncomingCallOverlay
+    :visible="incomingCallVisible"
+    :call="incomingCall"
+    @answer="closeIncomingCall"
+    @reject="closeIncomingCall"
+  />
+
+  <!-- <div class="bottom_nav_tab">
     <div
       v-for="tab in tabs"
       :key="tab.name"
@@ -692,20 +828,10 @@ onUnmounted(() => {
 
   <div v-if="activeTab === 2">
     <ThreejsViewerRegion />
-    <!-- <iframe
-      ref="iframeRef"
-      :src="publicLink.d25 || 'about:blank'"
-      class="iframe_panel_iframe"
-    /> -->
   </div>
   <div v-if="activeTab === 3">
     <ThreejsViewerBuilding />
-    <!-- <iframe
-      ref="iframeRef"
-      :src="publicLink.d3 || 'about:blank'"
-      class="iframe_panel_iframe"
-    /> -->
-  </div>
+  </div> -->
 </template>
 
 <style scoped>
@@ -715,7 +841,7 @@ onUnmounted(() => {
   border: 0;
 }
 
-.bottom_nav_tab {
+/* .bottom_nav_tab {
   position: absolute;
   bottom: 0.5em;
   left: 50%;
@@ -733,8 +859,6 @@ onUnmounted(() => {
   gap: 20px;
 }
 .tab_item {
-  /* width: 56px; */
-  /* height: 20px; */
   font-family:
     PingFangSC,
     PingFang SC;
@@ -762,7 +886,7 @@ onUnmounted(() => {
 .tab_item img {
   width: 20px;
   height: 20px;
-}
+} */
 
 #map {
   height: 100%;

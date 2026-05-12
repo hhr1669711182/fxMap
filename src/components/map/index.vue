@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { toRaw } from "vue";
+import { ref, toRaw } from "vue";
 import { storeToRefs } from "pinia";
 import tlp from "./compass.vue";
 import trp from "./trp.vue";
@@ -10,6 +10,7 @@ import topicLayerCard from "./component/topicLayerCard.vue";
 import dragPanel from "./dragPanel/index.vue";
 import twoFiveDPanel from "./component/d25Panel.vue";
 import threeDPanel from "./component/d3Panel.vue";
+import config from "./config.vue";
 
 import routePlan from "./component/routePlan.vue";
 import {
@@ -31,6 +32,14 @@ import keyboardNote from "../../baseComponent/keyboardNote.vue";
 // import GithubIcon from "../../baseComponent/GithubIcon.vue";
 // @ts-ignore
 import { publicLink } from "../../../public/publicLink.js";
+import layers from "./layers.vue";
+import type { LayerChangeHandler } from "./layers.vue";
+
+type OpenlayersMapExpose = {
+  addLayer: (id: string) => boolean
+  removeLayer: (id: string) => boolean
+  syncLayers: (ids: string[]) => void
+}
 
 const MapStore = useMapStore();
 const PanelStore = usePanelStore();
@@ -40,9 +49,19 @@ const tabsStore = useTabsStore();
 const { type } = storeToRefs(PanelStore);
 
 const { map } = storeToRefs(MapStore);
+const openlayersMapRef = ref<OpenlayersMapExpose | null>(null);
 
 const getMap = (map: Object) => {
   MapStore.setMap(map);
+};
+
+/** layers.vue 点击图层时回调，由 OpenlayersMap 执行实际的添加/移除 */
+const handleLayerChange: LayerChangeHandler = (action, id) => {
+  if (action === "add") {
+    openlayersMapRef.value?.addLayer(id);
+  } else {
+    openlayersMapRef.value?.removeLayer(id);
+  }
 };
 
 commonStore.$onAction(({ name, after }) => {
@@ -73,7 +92,7 @@ commonStore.$onAction(({ name, after }) => {
 </script>
 <template>
   <!-- 地图及其控件-->
-  <OpenlayersMap @setMap="getMap" />
+  <OpenlayersMap ref="openlayersMapRef" @setMap="getMap" />
 
   <!-- 指南针 -->
   <tlp v-if="tabsStore.activeTab === 1" />
@@ -94,13 +113,19 @@ commonStore.$onAction(({ name, after }) => {
   <!-- <topicLayerCard /> -->
 
   <!-- 清除 -->
-  <!-- <clear /> -->
+  <clear />
 
   <!-- 卡片内容 -->
   <card />
 
   <!-- 大卡片 -->
   <bigPanel />
+
+  <!-- 配置 -->
+  <config />
+
+  <!-- 图层 -->
+  <layers :onLayerChange="handleLayerChange" />
 
   <!--鼠标按键交互卡片-->
   <!-- <keyboardNote /> -->
@@ -109,9 +134,11 @@ commonStore.$onAction(({ name, after }) => {
   <!-- <GithubIcon /> -->
 
   <!-- 2.5D顺丰白模区域地图 -->
-  <twoFiveDPanel name="区域地图" :src="publicLink.d25" />
+  <!-- <twoFiveDPanel name="区域地图" :src="publicLink.d25" /> -->
 
   <!-- 三维模型构件 -->
-  <threeDPanel name="模型构件" :src="publicLink.d3" />
+  <!-- <threeDPanel name="模型构件" :src="publicLink.d3" /> -->
 </template>
-<style scoped></style>
+<style scoped>
+
+</style>

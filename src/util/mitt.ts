@@ -1,3 +1,3 @@
 import mitt from 'mitt'
 
-export const EventBus = new mitt()
+export const EventBus = mitt()

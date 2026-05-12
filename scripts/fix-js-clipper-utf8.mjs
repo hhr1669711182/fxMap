@@ -1,10 +1,10 @@
 /*
  * @Author: huanghuanrong
  * @Date: 2026-04-13 16:40:48
- * @LastEditTime: 2026-04-13 17:08:38
- * @LastEditors: huanghuanrong
+ * @LastEditTime: 2026-04-23 19:03:28
+ * @LastEditors: hhr
  * @Description: 文件描述
- * @FilePath: \OpenlayersMap\scripts\fix-js-clipper-utf8.mjs
+ * @FilePath: \ids-gis-web\scripts\fix-js-clipper-utf8.mjs
  */
 import fs from "node:fs";
 import path from "node:path";

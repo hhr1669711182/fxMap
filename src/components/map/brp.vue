@@ -1,3 +1,11 @@
+<!--
+ * @Author: huanghuanrong
+ * @Date: 2026-04-16 14:00:56
+ * @LastEditTime: 2026-05-12 16:33:57
+ * @LastEditors: huanghuanrong
+ * @Description: 文件描述
+ * @FilePath: \ids-gis-web\src\components\map\brp.vue
+-->
 <script setup lang="ts">
 import { onMounted, nextTick, toRaw, ref } from "vue";
 import { storeToRefs } from "pinia";

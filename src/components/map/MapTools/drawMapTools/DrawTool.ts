@@ -126,5 +126,15 @@ export class DrawTool extends BaseTool {
     this.mapEl?.classList.remove("draw");
 
     this.map.un("pointermove", this.setHelpTooltip);
+    super.destroy();
+  }
+
+  destroy() {
+    if (this.draw) {
+      this.map.removeInteraction(this.draw);
+    }
+    this.map.un("pointermove", this.setHelpTooltip);
+    this.sketch = null;
+    super.destroy();
   }
 }
